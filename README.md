@@ -1,7 +1,7 @@
 # VinylCutter
  A C# "Record Class" Code Generator 
 
-![Vinyl Record](https://commons.wikimedia.org/wiki/File:Vinyl_record_LP_10inch.JPG)
+![Vinyl Record](https://upload.wikimedia.org/wikipedia/commons/b/b1/Vinyl_record_LP_10inch.JPG)
 
 ## Overview
 
