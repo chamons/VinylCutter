@@ -1,0 +1,6 @@
+.DS_Store
+VinylCutter.csproj.user
+packages/
+bin/
+obj/
+.vs/

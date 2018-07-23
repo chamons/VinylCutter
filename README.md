@@ -33,8 +33,12 @@ public struct Customer
 
 even more so when you add methods to return new instances with modified items.
 
-There is a [proposal](https://github.com/dotnet/csharplang/blob/master/proposals/records) to fix this, but even if accepted it will be a long time until it is usable everywhere.
+There is a [proposal](https://github.com/dotnet/csharplang/blob/master/proposals/records.md) to fix this, but even if accepted it will be a long time until it is usable everywhere.
 
-**VinylCutter** is a single code generator to generate the boilerplate for you. 
+**VinylCutter** is a simple code generator to generate the boilerplate for you. 
 
 ## Usage
+
+## Building
+
+- Open VinylCutter.sln or `msbuild VinylCutter.sln`.
