@@ -36,7 +36,13 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EmptyClass.cs" />
+    <Compile Include="**.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\VinylCutter\VinylCutter.csproj">
+      <Project>{A731DAC4-1AB1-472A-AD89-E8985F4610EE}</Project>
+      <Name>VinylCutter</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
