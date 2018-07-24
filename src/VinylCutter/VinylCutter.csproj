@@ -47,11 +47,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
-    <Compile Include="ExternalCommand.cs" />
-    <Compile Include="Compiler.cs" />
-    <Compile Include="Parser.cs" />
-    <Compile Include="TempDirectory.cs" />
+    <Compile Include="**.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

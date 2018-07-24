@@ -9,14 +9,19 @@ namespace VinylCutter
 	public class ClassItem
 	{
 		public string Name { get; private set; }
+		public string TypeName { get; private set; }
 		public TypeReference Type { get; private set; }
 		public bool IsCollection { get; private set; }
 		public bool ForcedIncludeWith { get; private set; }
 
-		public ClassItem (string name, TypeReference type, bool isCollection, bool forcedIncludeWith)
+		public ClassItem (string name, string typeName) : this (name, typeName, false, false)
+		{
+		}
+
+		public ClassItem (string name, string typeName, bool isCollection, bool forcedIncludeWith)
 		{
 			Name = name;
-			Type = type;
+			TypeName = typeName;
 			IsCollection = isCollection;
 			ForcedIncludeWith = forcedIncludeWith;
 		}
@@ -37,25 +42,43 @@ namespace VinylCutter
 			if (type.Name.Contains ("IEnumerable")) 
 			{
 				GenericInstanceType genericInstance = (GenericInstanceType)type;
-				return new ClassItem (name, genericInstance.GenericArguments [0], true, forcedIncludeWith);
+				return new ClassItem (name, genericInstance.GenericArguments [0].Name, true, forcedIncludeWith);
 			} 
-			return new ClassItem (name, type, false, forcedIncludeWith);
+			return new ClassItem (name, type.Name, false, forcedIncludeWith);
 		}
 	}
+
+	public enum Visibility { Public, Private }
 
 	public class ParseInfo
 	{
 		public string Name { get; private set; }
+		public Visibility Visibility { get; private set; }
 		public bool IsClass { get; private set; }
 		public ImmutableArray<ClassItem> Items;
 		public bool IncludeWith { get; private set; }
 
-		public ParseInfo (string name, bool isClass, bool includeWith, IEnumerable<ClassItem> items)
+		public ParseInfo (string name, bool isClass, Visibility visibility) : this (name, isClass, visibility, true, Enumerable.Empty<ClassItem> ())
+		{
+		}
+
+		public ParseInfo (string name, bool isClass, Visibility visibility, bool includeWith, IEnumerable<ClassItem> items)
 		{
 			Name = name;
+			Visibility = visibility;
 			IsClass = isClass;
 			Items = ImmutableArray.CreateRange (items);
 			IncludeWith = includeWith;
+		}
+
+		public static Visibility GetVisibility (TypeDefinition type)
+		{
+			if (type.IsPublic)
+				return Visibility.Public;
+			// https://github.com/chamons/VinylCutter/issues/3 
+			// if (type.IsNestedFamily)
+			//	return Visibility.Private;
+			return Visibility.Private;
 		}
 
 		public static ParseInfo Create (TypeDefinition type)
@@ -66,9 +89,10 @@ namespace VinylCutter
 			var variables = type.Fields
 			                    .Where (x => !Parser.IsInternalConstruct (x.Name))
 			                    .Select (x => ClassItem.Create (x));
+			
 			bool isClass = type.BaseType.FullName != "System.ValueType";
 			bool includeWith = !type.CustomAttributes.Any (x => x.AttributeType.Name == "Without");
-			return new ParseInfo (type.Name, isClass, includeWith, properties.Union (variables));
+			return new ParseInfo (type.Name, isClass, GetVisibility (type), includeWith, properties.Union (variables));
 		}
 	}
 

@@ -30,7 +30,7 @@ namespace VinylCutter.Tests
 			var info = parser.Parse ();
 			Assert.AreEqual (1, info [0].Items.Length);
 			Assert.AreEqual ("X", info [0].Items [0].Name);
-			Assert.AreEqual ("Int32", info [0].Items [0].Type.Name);
+			Assert.AreEqual ("Int32", info [0].Items [0].TypeName);
 			Assert.IsFalse (info [0].Items [0].IsCollection);
 			Assert.IsFalse (info [0].Items [0].ForcedIncludeWith);
 		}
@@ -42,7 +42,7 @@ namespace VinylCutter.Tests
 			var info = parser.Parse ();
 			Assert.AreEqual (1, info [0].Items.Length);
 			Assert.AreEqual ("Y", info [0].Items [0].Name);
-			Assert.AreEqual ("Double", info [0].Items [0].Type.Name);
+			Assert.AreEqual ("Double", info [0].Items [0].TypeName);
 			Assert.IsFalse (info [0].Items [0].IsCollection);
 			Assert.IsFalse (info [0].Items [0].ForcedIncludeWith);
 		}
@@ -55,7 +55,7 @@ namespace VinylCutter.Tests
 			Assert.AreEqual (1, info [0].Items.Length);
 			Assert.AreEqual ("Z", info [0].Items [0].Name);
 			Assert.IsTrue(info [0].Items [0].IsCollection);
-			Assert.AreEqual ("Int32", info [0].Items [0].Type.Name);
+			Assert.AreEqual ("Int32", info [0].Items [0].TypeName);
 		}
 
 		[Test]
@@ -69,7 +69,7 @@ public class Container { IEnumerable <Element> E; }
 			Assert.AreEqual (1, info [0].Items.Length);
 			var container = info.First (x => x.Name == "Container");
 			Assert.AreEqual ("E", container.Items [0].Name);
-			Assert.AreEqual ("Element", container.Items [0].Type.Name);
+			Assert.AreEqual ("Element", container.Items [0].TypeName);
 			Assert.IsTrue (container.Items [0].IsCollection);
 		}
 
@@ -97,6 +97,16 @@ public class SimpleClass { [With] int X; }
 			Assert.IsFalse (info [0].IncludeWith);
 			Assert.IsTrue (info [0].Items[0].ForcedIncludeWith);
 		}
+		
+		[Test]
+		public void Visibilities ()
+		{
+			Func <string, Visibility> parseVisibility = s => (new Parser (s)).Parse()[0].Visibility;
+
+			Assert.AreEqual (Visibility.Public, parseVisibility ("public class SimpleClass {}"));
+			Assert.AreEqual (Visibility.Private, parseVisibility ("class SimpleClass {}"));
+		}
+
 
 		[Test]
 		public void ThrowOnInvalidCompiledInput ()

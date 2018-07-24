@@ -12,6 +12,8 @@ namespace VinylCutter
 		{
 			ErrorText = errorText;
 		}
+
+		public override string ToString () => $"ParseCompileError -  {ErrorText}";
 	}
 
 	public class Compiler : IDisposable
