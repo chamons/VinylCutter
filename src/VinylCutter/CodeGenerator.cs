@@ -104,12 +104,12 @@ namespace VinylCutter
 			if (!parseInfo.IncludeWith && !parseInfo.Items.Any (x => x.ForcedIncludeWith))
 				return;
 
-			writer.WriteLine ();
 			for (int i = 0 ; i < parseInfo.Items.Length ; ++i)
 			{
 				if (!(parseInfo.IncludeWith || parseInfo.Items[i].ForcedIncludeWith))
 					continue;
 
+				writer.WriteLine ();
 				ClassItem classItem = parseInfo.Items[i];
 				string itemTypeName = GetTypeName (classItem);
 				writer.WriteLine ($"public {parseInfo.Name} With{classItem.Name} ({itemTypeName} {classItem.Name.CamelPrefix ()})");
@@ -120,8 +120,6 @@ namespace VinylCutter
 
 				writer.Dedent ();
 				writer.WriteLine ("}");
-				if (i != parseInfo.Items.Length - 1)
-					writer.WriteLine ();
 			}
 		}
 

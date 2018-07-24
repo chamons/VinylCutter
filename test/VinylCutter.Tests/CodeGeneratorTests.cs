@@ -144,8 +144,8 @@ public partial class Container
 		[Test]
 		public void WithoutWith ()
 		{
-			ClassItem item = new ClassItem ("Foo", "Int32");  
-			ClassItem item2 = new ClassItem ("Bar", "Int32", false, true);  
+			ClassItem item = new ClassItem ("Foo", "Int32", false, true);  
+			ClassItem item2 = new ClassItem ("Bar", "Int32");
 			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, new ClassItem [] { item, item2 }); 
 			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
 			Assert.AreEqual (@"public partial class SimpleClass
@@ -159,9 +159,9 @@ public partial class Container
 		Bar = bar;
 	}
 
-	public SimpleClass WithBar (int bar)
+	public SimpleClass WithFoo (int foo)
 	{
-		return new SimpleClass (Foo, bar);
+		return new SimpleClass (foo, Bar);
 	}
 }
 ", generator.Generate ());
