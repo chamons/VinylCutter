@@ -16,7 +16,7 @@ namespace VinylCutter
 		
 		public void WriteLine ()
 		{
-			Write ("\n");
+			Output.Append ("\n");
 		}
 		
 		public void WriteLine (string s)

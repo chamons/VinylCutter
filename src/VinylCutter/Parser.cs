@@ -39,7 +39,7 @@ namespace VinylCutter
 		static ClassItem Create (string name, TypeReference type, CustomAttribute attribute)
 		{
 			bool forcedIncludeWith = attribute != null && attribute.AttributeType.Name == "With";
-			if (type.Name.Contains ("IEnumerable")) 
+			if (type.FullName.Contains ("System.Collections.Generic.List")) 
 			{
 				GenericInstanceType genericInstance = (GenericInstanceType)type;
 				return new ClassItem (name, genericInstance.GenericArguments [0].Name, true, forcedIncludeWith);

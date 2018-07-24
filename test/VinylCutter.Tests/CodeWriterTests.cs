@@ -34,5 +34,15 @@ namespace VinylCutter.Tests
 			writer.Dedent ();
 			Assert.Throws<InvalidOperationException> (() => writer.Dedent ());
 		}
+		
+		[Test]
+		public void EmptyLineDoesNotInheritIndent ()
+		{
+			CodeWriter writer = new CodeWriter ();
+			writer.Indent ();
+			writer.WriteLine ();
+			Assert.AreEqual ("\n", writer.Generate ());
+		}
+
 	}
 }

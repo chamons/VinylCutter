@@ -1,25 +1,41 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace VinylCutter
 {
 	public class CodeGenerator
 	{
-		IEnumerable <ParseInfo> ParseInfos;
+		List <ParseInfo> ParseInfos;
 
 		public CodeGenerator (IEnumerable <ParseInfo> parseInfos)
 		{
-			ParseInfos = parseInfos;
+			ParseInfos = parseInfos.ToList ();
 		}
 
 		public string Generate ()
 		{
 			CodeWriter writer = new CodeWriter ();
-			foreach (var parseInfo in ParseInfos)
+			GenerateUsings (writer);
+			for (int i = 0 ; i < ParseInfos.Count ; ++i)
+			{
+				ParseInfo parseInfo = ParseInfos[i];
 				GenerateFromInfo (parseInfo, writer);
+				if (i != ParseInfos.Count - 1)
+					writer.WriteLine ();
+			}
+
 			return writer.Generate ();
+		}
+
+		void GenerateUsings (CodeWriter writer)
+		{
+			if (ParseInfos.Any (x => x.Items.Any (y => y.IsCollection)))
+			{
+				writer.WriteLine ("using System.Collections.Immutable;");
+				writer.WriteLine ();
+			}
 		}
 
 		static void GenerateFromInfo (ParseInfo parseInfo, CodeWriter writer)
@@ -44,7 +60,7 @@ namespace VinylCutter
 			for (int i = 0 ; i < parseInfo.Items.Length ; ++i)
 			{
 				ClassItem classItem = parseInfo.Items[i];
-				builder.Append ($"{MakeFriendlyTypeName (classItem.TypeName)} {classItem.Name.CamelPrefix ()}");
+				builder.Append ($"{GetTypeName (classItem)} {classItem.Name.CamelPrefix ()}");
 				if (i != parseInfo.Items.Length - 1)
 					builder.Append (", ");
 			}
@@ -78,15 +94,24 @@ namespace VinylCutter
 				writer.WriteLine ($"{classItem.Name} = {classItem.Name.CamelPrefix ()};");
 			writer.Dedent ();
 			writer.WriteLine ("}");
-			writer.WriteLine ();
 		}
 
 		static void GenerateWith (ParseInfo parseInfo, CodeWriter writer)
 		{
+			if (parseInfo.Items.Length == 0)
+				return;
+
+			if (!parseInfo.IncludeWith && !parseInfo.Items.Any (x => x.ForcedIncludeWith))
+				return;
+
+			writer.WriteLine ();
 			for (int i = 0 ; i < parseInfo.Items.Length ; ++i)
 			{
+				if (!(parseInfo.IncludeWith || parseInfo.Items[i].ForcedIncludeWith))
+					continue;
+
 				ClassItem classItem = parseInfo.Items[i];
-				string itemTypeName = MakeFriendlyTypeName (classItem.TypeName);
+				string itemTypeName = GetTypeName (classItem);
 				writer.WriteLine ($"public {parseInfo.Name} With{classItem.Name} ({itemTypeName} {classItem.Name.CamelPrefix ()})");
 				writer.WriteLine ("{");
 				writer.Indent ();
@@ -102,7 +127,7 @@ namespace VinylCutter
 
 		static void GenerateProperty (ClassItem item, CodeWriter writer)
 		{
-			writer.WriteLine ($"public {MakeFriendlyTypeName (item.TypeName)} {item.Name} {{ get; }}");
+			writer.WriteLine ($"public {GetTypeName (item)} {item.Name} {{ get; }}");
 		}
 
 		static void GenerateClassHeader (ParseInfo parseInfo, CodeWriter writer)
@@ -117,6 +142,13 @@ namespace VinylCutter
 		static void GenerateClassFooter (CodeWriter writer)
 		{
 			writer.WriteLine ("}");
+		}
+
+		static string GetTypeName (ClassItem item)
+		{
+			if (item.IsCollection)
+				return $"ImmutableList<{MakeFriendlyTypeName (item.TypeName)}>";
+			return MakeFriendlyTypeName (item.TypeName);
 		}
 
 		static string MakeFriendlyTypeName (string typeName)

@@ -17,6 +17,22 @@ namespace VinylCutter.Tests
 			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
 			Assert.AreEqual (expected, generator.Generate ());
 		}
+		
+		[Test]
+		public void SpacesBetweenRecords ()
+		{
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public); 
+			ParseInfo parseInfo2 = new ParseInfo ("SimpleClass2", true, Visibility.Public); 
+			CodeGenerator generator = new CodeGenerator (new ParseInfo [] { parseInfo, parseInfo2 });
+			Assert.AreEqual (@"public partial class SimpleClass
+{
+}
+
+public partial class SimpleClass2
+{
+}
+", generator.Generate ());
+		}
 
 		[Test]
 		public void GenerateBasicProperties ()
@@ -29,18 +45,120 @@ namespace VinylCutter.Tests
 {
 	public int Foo { get; }
 	public int Bar { get; }
-	
+
 	public SimpleClass (int foo, int bar)
 	{
 		Foo = foo;
 		Bar = bar;
 	}
-	
+
 	public SimpleClass WithFoo (int foo)
 	{
 		return new SimpleClass (foo, Bar);
 	}
-	
+
+	public SimpleClass WithBar (int bar)
+	{
+		return new SimpleClass (Foo, bar);
+	}
+}
+", generator.Generate ());
+		}
+
+		[Test]
+		public void Enumerables ()
+		{
+			ClassItem item = new ClassItem ("Foo", "Int32", true, false);  
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ()); 
+			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
+			Assert.AreEqual (@"using System.Collections.Immutable;
+
+public partial class SimpleClass
+{
+	public ImmutableList<int> Foo { get; }
+
+	public SimpleClass (ImmutableList<int> foo)
+	{
+		Foo = foo;
+	}
+
+	public SimpleClass WithFoo (ImmutableList<int> foo)
+	{
+		return new SimpleClass (foo);
+	}
+}
+", generator.Generate ());
+		}
+		
+		[Test]
+		public void OtherRecordTypes ()
+		{
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public); 
+			ClassItem item = new ClassItem ("Items", "SimpleClass", true, false);  
+			ParseInfo parseInfo2 = new ParseInfo ("Container", true, Visibility.Public, true, item.Yield ()); 
+			CodeGenerator generator = new CodeGenerator (new ParseInfo [] { parseInfo, parseInfo2 });
+			Assert.AreEqual (@"using System.Collections.Immutable;
+
+public partial class SimpleClass
+{
+}
+
+public partial class Container
+{
+	public ImmutableList<SimpleClass> Items { get; }
+
+	public Container (ImmutableList<SimpleClass> items)
+	{
+		Items = items;
+	}
+
+	public Container WithItems (ImmutableList<SimpleClass> items)
+	{
+		return new Container (items);
+	}
+}
+", generator.Generate ());
+		}
+		
+		[Test]
+		public void Without ()
+		{
+			ClassItem item = new ClassItem ("Foo", "Int32");  
+			ClassItem item2 = new ClassItem ("Bar", "Int32");  
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, new ClassItem [] { item, item2 }); 
+			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
+			Assert.AreEqual (@"public partial class SimpleClass
+{
+	public int Foo { get; }
+	public int Bar { get; }
+
+	public SimpleClass (int foo, int bar)
+	{
+		Foo = foo;
+		Bar = bar;
+	}
+}
+", generator.Generate ());
+		}
+		
+		[Test]
+		public void WithoutWith ()
+		{
+			ClassItem item = new ClassItem ("Foo", "Int32");  
+			ClassItem item2 = new ClassItem ("Bar", "Int32", false, true);  
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, new ClassItem [] { item, item2 }); 
+			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
+			Assert.AreEqual (@"public partial class SimpleClass
+{
+	public int Foo { get; }
+	public int Bar { get; }
+
+	public SimpleClass (int foo, int bar)
+	{
+		Foo = foo;
+		Bar = bar;
+	}
+
 	public SimpleClass WithBar (int bar)
 	{
 		return new SimpleClass (Foo, bar);

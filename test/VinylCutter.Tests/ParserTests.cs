@@ -50,7 +50,7 @@ namespace VinylCutter.Tests
 		[Test]
 		public void IEnumerables ()
 		{
-			Parser parser = new Parser ("public class SimpleClass { IEnumerable<int> Z; }");
+			Parser parser = new Parser ("public class SimpleClass { List<int> Z; }");
 			var info = parser.Parse ();
 			Assert.AreEqual (1, info [0].Items.Length);
 			Assert.AreEqual ("Z", info [0].Items [0].Name);
@@ -63,7 +63,7 @@ namespace VinylCutter.Tests
 		{
 			Parser parser = new Parser (@"
 public class Element { int X; }
-public class Container { IEnumerable <Element> E; }
+public class Container { List <Element> E; }
 ");
 			var info = parser.Parse ();
 			Assert.AreEqual (1, info [0].Items.Length);
