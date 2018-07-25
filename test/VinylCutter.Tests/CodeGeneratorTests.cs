@@ -207,5 +207,24 @@ public partial class Container
 }
 ", generator.Generate ());
 		}
+
+		[Test]
+		public void Default ()
+		{
+			ClassItem item = new ClassItem ("X", "Int32", defaultValue: "42");
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, item.Yield ());
+			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
+			Assert.AreEqual (@"public partial class SimpleClass
+{
+	public int X { get; }
+
+	public SimpleClass (int x = 42)
+	{
+		X = x;
+	}
+}
+", generator.Generate ());
+		}
+
 	}
 }

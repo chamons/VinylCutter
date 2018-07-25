@@ -15,6 +15,7 @@ namespace VinylCutter.Tests
 public class Point : IPoint
 {
 	double X;
+	[Default (42)]
 	double Y;
 }
 
@@ -37,7 +38,7 @@ public partial class Point : IPoint
 	public double X { get; }
 	public double Y { get; }
 
-	public Point (double x, double y)
+	public Point (double x, double y = 42)
 	{
 		X = x;
 		Y = y;

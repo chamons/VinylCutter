@@ -166,5 +166,21 @@ public class SimpleClass : Foo, IFoo
 			var info = parser.Parse ();
 			Assert.AreEqual ("Foo, IFoo", info.First (x => x.Name == "SimpleClass").BaseTypes);
 		}
+
+		[Test]
+		public void Default ()
+		{
+			Parser parser = new Parser (@"public class SimpleClass
+{
+	[Default (0)]
+	int X;
+	int Y; 
+}
+");
+			var info = parser.Parse ();
+			Assert.AreEqual ("0", info[0].Items[0].DefaultValue);
+			Assert.AreEqual (null, info[0].Items[1].DefaultValue);
+		}
+
 	}
 }

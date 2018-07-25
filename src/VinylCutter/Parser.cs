@@ -15,17 +15,15 @@ namespace VinylCutter
 		public string TypeName { get; private set; }
 		public bool IsCollection { get; private set; }
 		public bool IncludeWith { get; private set; }
+		public string DefaultValue { get; private set; }
 
-		public ClassItem (string name, string typeName) : this (name, typeName, false, false)
-		{
-		}
-
-		public ClassItem (string name, string typeName, bool isCollection, bool includeWith)
+		public ClassItem (string name, string typeName, bool isCollection = false, bool includeWith = false, string defaultValue = null)
 		{
 			Name = name;
 			TypeName = typeName;
 			IsCollection = isCollection;
 			IncludeWith = includeWith;
+			DefaultValue = defaultValue;
 		}
 	}
 
@@ -73,6 +71,9 @@ public class With : System.Attribute { }
 
 [AttributeUsage (AttributeTargets.All)]
 public class Inject : System.Attribute { }
+
+[AttributeUsage (AttributeTargets.Field | AttributeTargets.Property)]
+public class Default : System.Attribute { public Default (object value) {} }
 ";
 
 		List<ParseInfo> Infos;
@@ -167,12 +168,19 @@ public class Inject : System.Attribute { }
 
 		ClassItem CreateClassItem (ISymbol symbol, ITypeSymbol type)
 		{
+			string defaultValue = GetDefaultValue (symbol);
 			if (type.OriginalDefinition.Equals (Symbols.List))
 			{
 				INamedTypeSymbol t = (INamedTypeSymbol)type;
-				return new ClassItem (symbol.Name, t.TypeArguments[0].Name, true, HasWith (symbol));
+				return new ClassItem (symbol.Name, t.TypeArguments[0].Name, true, HasWith (symbol), defaultValue);
 			}
-			return new ClassItem (symbol.Name, type.Name, false, HasWith (symbol));
+			return new ClassItem (symbol.Name, type.Name, false, HasWith (symbol), defaultValue);
+		}
+	
+		string GetDefaultValue (ISymbol symbol)
+		{
+			AttributeData defaultAttribute = symbol.GetAttributes ().FirstOrDefault (x => x.AttributeClass.Equals (Symbols.DefaultAttribute));
+			return defaultAttribute != null ? defaultAttribute.ConstructorArguments[0].Value.ToString () : null;
 		}
 	}
 
@@ -184,6 +192,7 @@ public class Inject : System.Attribute { }
 		public INamedTypeSymbol InjectAttribute;
 		public INamedTypeSymbol WithAttribute;
 		public INamedTypeSymbol SkipAttribute;
+		public INamedTypeSymbol DefaultAttribute;
 		public INamedTypeSymbol List;
 
 		public Symbols (CSharpCompilation compilation)
@@ -194,6 +203,7 @@ public class Inject : System.Attribute { }
 			InjectAttribute = compilation.GetTypeByMetadataName ("Inject");
 			WithAttribute = compilation.GetTypeByMetadataName ("With");
 			SkipAttribute = compilation.GetTypeByMetadataName ("Skip");
+			DefaultAttribute = compilation.GetTypeByMetadataName ("Default");
 			List = compilation.GetTypeByMetadataName ("System.Collections.Generic.List`1");
 		}
 	}

@@ -62,7 +62,8 @@ namespace VinylCutter
 			for (int i = 0 ; i < parseInfo.Items.Length ; ++i)
 			{
 				ClassItem classItem = parseInfo.Items[i];
-				builder.Append ($"{GetTypeName (classItem)} {classItem.Name.CamelPrefix ()}");
+				string defaultValue = classItem.DefaultValue != null ? $" = {classItem.DefaultValue}" : "";
+				builder.Append ($"{GetTypeName (classItem)} {classItem.Name.CamelPrefix ()}{defaultValue}");
 				if (i != parseInfo.Items.Length - 1)
 					builder.Append (", ");
 			}
