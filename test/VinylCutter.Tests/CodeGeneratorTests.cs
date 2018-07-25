@@ -39,7 +39,7 @@ public partial class SimpleClass2
 		{
 			ClassItem item = new ClassItem ("Foo", "Int32");  
 			ClassItem item2 = new ClassItem ("Bar", "Int32");  
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, true, new ClassItem [] { item, item2 }); 
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, new ClassItem [] { item, item2 }); 
 			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
 			Assert.AreEqual (@"public partial class SimpleClass
 {
@@ -50,16 +50,6 @@ public partial class SimpleClass2
 	{
 		Foo = foo;
 		Bar = bar;
-	}
-
-	public SimpleClass WithFoo (int foo)
-	{
-		return new SimpleClass (foo, Bar);
-	}
-
-	public SimpleClass WithBar (int bar)
-	{
-		return new SimpleClass (Foo, bar);
 	}
 }
 ", generator.Generate ());
@@ -121,11 +111,11 @@ public partial class Container
 		}
 		
 		[Test]
-		public void Without ()
+		public void With ()
 		{
 			ClassItem item = new ClassItem ("Foo", "Int32");  
 			ClassItem item2 = new ClassItem ("Bar", "Int32");  
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, new ClassItem [] { item, item2 }); 
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, true, new ClassItem [] { item, item2 }); 
 			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
 			Assert.AreEqual (@"public partial class SimpleClass
 {
@@ -137,12 +127,22 @@ public partial class Container
 		Foo = foo;
 		Bar = bar;
 	}
+
+	public SimpleClass WithFoo (int foo)
+	{
+		return new SimpleClass (foo, Bar);
+	}
+
+	public SimpleClass WithBar (int bar)
+	{
+		return new SimpleClass (Foo, bar);
+	}
 }
 ", generator.Generate ());
 		}
 		
 		[Test]
-		public void WithoutWith ()
+		public void WithOnSingleProperty ()
 		{
 			ClassItem item = new ClassItem ("Foo", "Int32", false, true);  
 			ClassItem item2 = new ClassItem ("Bar", "Int32");

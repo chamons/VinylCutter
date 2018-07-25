@@ -12,18 +12,18 @@ namespace VinylCutter
 		public string TypeName { get; private set; }
 		public TypeReference Type { get; private set; }
 		public bool IsCollection { get; private set; }
-		public bool ForcedIncludeWith { get; private set; }
+		public bool IncludeWith { get; private set; }
 
 		public ClassItem (string name, string typeName) : this (name, typeName, false, false)
 		{
 		}
 
-		public ClassItem (string name, string typeName, bool isCollection, bool forcedIncludeWith)
+		public ClassItem (string name, string typeName, bool isCollection, bool includeWith)
 		{
 			Name = name;
 			TypeName = typeName;
 			IsCollection = isCollection;
-			ForcedIncludeWith = forcedIncludeWith;
+			IncludeWith = includeWith;
 		}
 
 		public static ClassItem Create (PropertyDefinition propertyDefinition)
@@ -38,13 +38,13 @@ namespace VinylCutter
 
 		static ClassItem Create (string name, TypeReference type, CustomAttribute attribute)
 		{
-			bool forcedIncludeWith = attribute != null && attribute.AttributeType.Name == "With";
+			bool includeWith = attribute != null && attribute.AttributeType.Name == "With";
 			if (type.FullName.Contains ("System.Collections.Generic.List")) 
 			{
 				GenericInstanceType genericInstance = (GenericInstanceType)type;
-				return new ClassItem (name, genericInstance.GenericArguments [0].Name, true, forcedIncludeWith);
+				return new ClassItem (name, genericInstance.GenericArguments [0].Name, true, includeWith);
 			} 
-			return new ClassItem (name, type.Name, false, forcedIncludeWith);
+			return new ClassItem (name, type.Name, false, includeWith);
 		}
 	}
 
@@ -91,7 +91,7 @@ namespace VinylCutter
 			                    .Select (x => ClassItem.Create (x));
 			
 			bool isClass = type.BaseType.FullName != "System.ValueType";
-			bool includeWith = !type.CustomAttributes.Any (x => x.AttributeType.Name == "Without");
+			bool includeWith = type.CustomAttributes.Any (x => x.AttributeType.Name == "With");
 			return new ParseInfo (type.Name, isClass, GetVisibility (type), includeWith, properties.Union (variables));
 		}
 	}
@@ -107,9 +107,9 @@ using System;
 using System.Collections.Generic;
 
 [AttributeUsage (AttributeTargets.Class | AttributeTargets.Struct)]
-public class Without : System.Attribute { } 
+public class Skip : System.Attribute { } 
 
-[AttributeUsage (AttributeTargets.Field | AttributeTargets.Property)]
+[AttributeUsage (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property)]
 public class With : System.Attribute { } 
 ";
 
@@ -127,7 +127,9 @@ public class With : System.Attribute { }
 				var module = ModuleDefinition.ReadModule (assemblyPath);
 				foreach (TypeDefinition type in module.Types.Where (x => x.IsClass && !IsInternalConstruct (x.Name) && !IsAttribute (x)))
 				{
-					infos.Add (ParseInfo.Create (type));
+					bool skip = type.CustomAttributes.Any (x => x.AttributeType.Name == "Skip");
+					if (!skip)
+						infos.Add (ParseInfo.Create (type));
 				}
 			}
 			return infos;

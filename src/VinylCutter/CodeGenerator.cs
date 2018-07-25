@@ -101,12 +101,12 @@ namespace VinylCutter
 			if (parseInfo.Items.Length == 0)
 				return;
 
-			if (!parseInfo.IncludeWith && !parseInfo.Items.Any (x => x.ForcedIncludeWith))
+			if (!(parseInfo.IncludeWith || parseInfo.Items.Any (x => x.IncludeWith)))
 				return;
 
 			for (int i = 0 ; i < parseInfo.Items.Length ; ++i)
 			{
-				if (!(parseInfo.IncludeWith || parseInfo.Items[i].ForcedIncludeWith))
+				if (!(parseInfo.IncludeWith || parseInfo.Items[i].IncludeWith))
 					continue;
 
 				writer.WriteLine ();

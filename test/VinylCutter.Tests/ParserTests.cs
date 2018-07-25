@@ -18,7 +18,7 @@ namespace VinylCutter.Tests
 			Assert.AreEqual (1, info.Count);
 			Assert.AreEqual (name, info [0].Name);
 			Assert.AreEqual (isClass, info [0].IsClass);
-			Assert.IsTrue (info [0].IncludeWith);
+			Assert.IsFalse (info [0].IncludeWith);
 		}
 
 		[Test]
@@ -30,7 +30,7 @@ namespace VinylCutter.Tests
 			Assert.AreEqual ("X", info [0].Items [0].Name);
 			Assert.AreEqual ("Int32", info [0].Items [0].TypeName);
 			Assert.IsFalse (info [0].Items [0].IsCollection);
-			Assert.IsFalse (info [0].Items [0].ForcedIncludeWith);
+			Assert.IsFalse (info [0].Items [0].IncludeWith);
 		}
 
 		[Test]
@@ -42,7 +42,7 @@ namespace VinylCutter.Tests
 			Assert.AreEqual ("Y", info [0].Items [0].Name);
 			Assert.AreEqual ("Double", info [0].Items [0].TypeName);
 			Assert.IsFalse (info [0].Items [0].IsCollection);
-			Assert.IsFalse (info [0].Items [0].ForcedIncludeWith);
+			Assert.IsFalse (info [0].Items [0].IncludeWith);
 		}
 
 		[Test]
@@ -72,15 +72,15 @@ public class Container { List <Element> E; }
 		}
 
 		[Test]
-		public void ClassWithoutAttributes ()
+		public void ClassWithAttributes ()
 		{
 			Parser parser = new Parser (@"
-[Without]
+[With]
 public class SimpleClass { int X; }
 ");
 			var info = parser.Parse ();
-			Assert.IsFalse (info [0].IncludeWith);
-			Assert.IsFalse (info [0].Items[0].ForcedIncludeWith);
+			Assert.IsTrue (info [0].IncludeWith);
+			Assert.IsFalse (info [0].Items[0].IncludeWith);
 
 		}
 
@@ -88,12 +88,11 @@ public class SimpleClass { int X; }
 		public void ItemSpecificWithAttributes ()
 		{
 			Parser parser = new Parser (@"
-[Without]
 public class SimpleClass { [With] int X; }
 ");
 			var info = parser.Parse ();
 			Assert.IsFalse (info [0].IncludeWith);
-			Assert.IsTrue (info [0].Items[0].ForcedIncludeWith);
+			Assert.IsTrue (info [0].Items[0].IncludeWith);
 		}
 		
 		[Test]
@@ -105,6 +104,18 @@ public class SimpleClass { [With] int X; }
 			Assert.AreEqual (Visibility.Private, parseVisibility ("class SimpleClass {}"));
 		}
 
+		[Test]
+		public void Skip ()
+		{
+			Parser parser = new Parser (@"
+public class SimpleClass { int X; }
+[Skip]
+public class SkippedSimpleClass { int X; }
+");
+			var info = parser.Parse ();
+			Assert.AreEqual (1, info.Count ());
+			Assert.AreEqual ("SimpleClass", info [0].Name);
+		}
 
 		[Test]
 		public void ThrowOnInvalidCompiledInput ()

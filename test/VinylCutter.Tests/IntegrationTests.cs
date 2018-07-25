@@ -11,13 +11,13 @@ namespace VinylCutter.Tests
 		public void SmokeTest ()
 		{
 			string testCode = @"
+[With]
 public class Point
 {
 	double X;
 	double Y;
 }
 
-[Without]
 public class PointList
 {
 	[With]
