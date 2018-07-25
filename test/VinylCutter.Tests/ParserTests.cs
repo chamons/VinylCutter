@@ -182,5 +182,18 @@ public class SimpleClass : Foo, IFoo
 			Assert.AreEqual (null, info[0].Items[1].DefaultValue);
 		}
 
+		[Test]
+		public void NullDefault ()
+		{
+			Parser parser = new Parser (@"public class SimpleClass
+{
+	[Default (null)]
+	string X;
+}
+");
+			var info = parser.Parse ();
+			Assert.AreEqual ("null", info[0].Items[0].DefaultValue);
+		}
+
 	}
 }

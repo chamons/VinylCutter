@@ -180,7 +180,10 @@ public class Default : System.Attribute { public Default (object value) {} }
 		string GetDefaultValue (ISymbol symbol)
 		{
 			AttributeData defaultAttribute = symbol.GetAttributes ().FirstOrDefault (x => x.AttributeClass.Equals (Symbols.DefaultAttribute));
-			return defaultAttribute != null ? defaultAttribute.ConstructorArguments[0].Value.ToString () : null;
+			if (defaultAttribute == null)
+				return null;
+			object defaultValue = defaultAttribute.ConstructorArguments[0].Value;
+			return defaultValue == null ? "null" : defaultValue.ToString (); // Default (null) is encoded as null
 		}
 	}
 
