@@ -9,7 +9,7 @@ BRITTLE_BUILD = mono /Library/Frameworks/Mono.framework/Versions/5.10.1/lib/mono
 all:: build
 
 dist:: build-release
-	$(Q) rm -r ./dist/
+	$(Q) rm -fr ./dist/
 	$(Q) mkdir -p dist/bin
 	$(Q) cp -R src/VinylCutter/bin/Release/ dist/bin/
 	$(Q) cp data/VinylCutter dist/
