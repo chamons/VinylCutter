@@ -189,5 +189,23 @@ public partial class Container
 }
 ", generator.Generate ());
 		}
+
+		[Test]
+		public void Inherit ()
+		{
+			ClassItem item = new ClassItem ("X", "Int32");
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, item.Yield (), baseTypes: "IFoo");
+			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
+			Assert.AreEqual (@"public partial class SimpleClass : IFoo
+{
+	public int X { get; }
+
+	public SimpleClass (int x)
+	{
+		X = x;
+	}
+}
+", generator.Generate ());
+		}
 	}
 }

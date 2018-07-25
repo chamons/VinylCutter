@@ -12,7 +12,7 @@ namespace VinylCutter.Tests
 		{
 			string testCode = @"
 [With]
-public class Point
+public class Point : IPoint
 {
 	double X;
 	double Y;
@@ -32,7 +32,7 @@ public class PointList
 			string output = new CodeGenerator (parser.Parse ()).Generate ();
 			Assert.AreEqual (@"using System.Collections.Immutable;
 
-public partial class Point
+public partial class Point : IPoint
 {
 	public double X { get; }
 	public double Y { get; }

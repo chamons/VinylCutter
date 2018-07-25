@@ -135,7 +135,8 @@ namespace VinylCutter
 			// https://github.com/chamons/VinylCutter/issues/3		
 			string visibility = parseInfo.Visibility == Visibility.Public ? "public " : "";
 			string recordType = parseInfo.IsClass ? "class" : "struct";
-			writer.WriteLine ($"{visibility}partial {recordType} {parseInfo.Name}");
+			string baseTypes = parseInfo.BaseTypes != "" ? $" : {parseInfo.BaseTypes}" : "";
+			writer.WriteLine ($"{visibility}partial {recordType} {parseInfo.Name}{baseTypes}");
 			writer.WriteLine ("{");
 		}
 		

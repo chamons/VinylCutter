@@ -18,6 +18,7 @@ namespace VinylCutter.Tests
 			Assert.AreEqual (name, info [0].Name);
 			Assert.AreEqual (isClass, info [0].IsClass);
 			Assert.IsFalse (info [0].IncludeWith);
+			Assert.AreEqual ("", info[0].BaseTypes);
 		}
 
 		[Test]
@@ -150,6 +151,20 @@ public enum ParsingConfidence
 			Assert.AreEqual ("\tint Size => X * Y;", info[0].InjectCode);
 			Assert.AreEqual (2, info[0].Items.Length);
 
+		}
+
+		[Test]
+		public void Inherit ()
+		{
+			Parser parser = new Parser (@"public class Foo {}
+public class SimpleClass : Foo, IFoo
+{
+	int X; 
+	int Y; 
+}
+");
+			var info = parser.Parse ();
+			Assert.AreEqual ("Foo, IFoo", info.First (x => x.Name == "SimpleClass").BaseTypes);
 		}
 	}
 }

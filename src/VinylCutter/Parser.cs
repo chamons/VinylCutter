@@ -38,23 +38,25 @@ namespace VinylCutter
 		public bool IsClass { get; private set; }
 		public ImmutableArray<ClassItem> Items;
 		public bool IncludeWith { get; private set; }
+		public string BaseTypes { get; private set; }
 		public string InjectCode { get; }
 
-		public ParseInfo (string name, bool isClass, Visibility visibility, bool includeWith = false, IEnumerable<ClassItem> items = null, string injectCode = "")
+		public ParseInfo (string name, bool isClass, Visibility visibility, bool includeWith = false, IEnumerable<ClassItem> items = null, string baseTypes = "", string injectCode = "")
 		{
 			Name = name;
 			Visibility = visibility;
 			IsClass = isClass;
 			Items = ImmutableArray.CreateRange (items ?? Enumerable.Empty<ClassItem> ());
 			IncludeWith = includeWith;
+			BaseTypes = baseTypes;
 			InjectCode = injectCode;
 		}
 	}
 
 	public class Parser
 	{
-		bool HasWith (ISymbol s) => s.GetAttributes ().Any (x => x.AttributeClass.Equals (WithAttributeSymbol));
-		bool HasInject (ISymbol s) => s.GetAttributes ().Any (x => x.AttributeClass.Equals (InjectAttributeSymbol));
+		bool HasWith (ISymbol s) => s.GetAttributes ().Any (x => x.AttributeClass.Equals (Symbols.WithAttribute));
+		bool HasInject (ISymbol s) => s.GetAttributes ().Any (x => x.AttributeClass.Equals (Symbols.InjectAttribute));
 
 		static bool IsInternalConstruct (ISymbol s) => s.Name.Contains ("<") || s.Name.Contains (">");
 
@@ -70,15 +72,11 @@ public class Skip : System.Attribute { }
 public class With : System.Attribute { } 
 
 [AttributeUsage (AttributeTargets.All)]
-public class Inject : System.Attribute { } 
+public class Inject : System.Attribute { }
 ";
 
 		List<ParseInfo> Infos;
-		INamedTypeSymbol AttributeSymbol;
-		INamedTypeSymbol InjectAttributeSymbol;
-		INamedTypeSymbol WithAttributeSymbol;
-		INamedTypeSymbol SkipAttributeSymbol;
-		INamedTypeSymbol ListSymbol;
+		Symbols Symbols;
 		SemanticModel Model;
 
 		public Parser (string text)
@@ -95,11 +93,7 @@ public class Inject : System.Attribute { }
 			var mscorlib = MetadataReference.CreateFromFile (typeof (object).Assembly.Location);
 			var compilation = CSharpCompilation.Create ("Vinyl").AddReferences (mscorlib).AddSyntaxTrees (tree);
 
-			AttributeSymbol = compilation.GetTypeByMetadataName (typeof (System.Attribute).FullName);
-			InjectAttributeSymbol = compilation.GetTypeByMetadataName ("Inject");
-			WithAttributeSymbol = compilation.GetTypeByMetadataName ("With");
-			SkipAttributeSymbol = compilation.GetTypeByMetadataName ("Skip");
-			ListSymbol = compilation.GetTypeByMetadataName ("System.Collections.Generic.List`1");
+			Symbols = new Symbols (compilation);
 
 			Model = compilation.GetSemanticModel (tree);
 
@@ -117,10 +111,10 @@ public class Inject : System.Attribute { }
 			if (itemInfo.IsAbstract || itemInfo.EnumUnderlyingType != null)
 				return;
 
-			if (itemInfo.BaseType.Equals (AttributeSymbol))
+			if (itemInfo.BaseType.Equals (Symbols.Attribute))
 				return;
 
-			if (itemInfo.GetAttributes ().Any (x => x.AttributeClass.Equals (SkipAttributeSymbol)))
+			if (itemInfo.GetAttributes ().Any (x => x.AttributeClass.Equals (Symbols.SkipAttribute)))
 				return;
 
 			List<ClassItem> classItems = new List<ClassItem> ();
@@ -131,10 +125,29 @@ public class Inject : System.Attribute { }
 			foreach (var field in itemInfo.GetMembers ().OfType<IFieldSymbol>().Where (x => !IsInternalConstruct(x) && !HasInject (x)))
 				classItems.Add (CreateClassItem (field, field.Type));
 
+			string baseType = GetBaseTypes (itemInfo);
 			string injectCode = GetInjectionCode (itemInfo);
 
 			Visibility visibility = itemInfo.DeclaredAccessibility == Accessibility.Public ? Visibility.Public : Visibility.Private;
-			Infos.Add (new ParseInfo (itemInfo.Name, itemInfo.IsReferenceType, visibility, HasWith (itemInfo), classItems, injectCode));
+			Infos.Add (new ParseInfo (itemInfo.Name, itemInfo.IsReferenceType, visibility, includeWith : HasWith (itemInfo), items: classItems, baseTypes: baseType, injectCode: injectCode));
+		}
+
+		string GetBaseTypes (INamedTypeSymbol itemInfo)
+		{
+			List<string> baseTypes = new List<string> ();
+			string baseType = GetBaseType (itemInfo);
+			if (baseType != null)
+				baseTypes.Add (baseType);
+			baseTypes.AddRange (itemInfo.Interfaces.Select (x => x.Name));
+			return string.Join (", ", baseTypes);
+		}
+
+		string GetBaseType (INamedTypeSymbol itemInfo)
+		{
+			if (itemInfo.IsValueType)
+				return itemInfo.BaseType.Equals (Symbols.ValueType) ? null : itemInfo.BaseType.Name;
+			else
+				return itemInfo.BaseType.Equals (Symbols.Object) ? null : itemInfo.BaseType.Name;
 		}
 
 		string GetInjectionCode (INamedTypeSymbol itemInfo)
@@ -154,12 +167,34 @@ public class Inject : System.Attribute { }
 
 		ClassItem CreateClassItem (ISymbol symbol, ITypeSymbol type)
 		{
-			if (type.OriginalDefinition.Equals (ListSymbol))
+			if (type.OriginalDefinition.Equals (Symbols.List))
 			{
 				INamedTypeSymbol t = (INamedTypeSymbol)type;
 				return new ClassItem (symbol.Name, t.TypeArguments[0].Name, true, HasWith (symbol));
 			}
 			return new ClassItem (symbol.Name, type.Name, false, HasWith (symbol));
+		}
+	}
+
+	public class Symbols
+	{
+		public INamedTypeSymbol Attribute;
+		public INamedTypeSymbol Object;
+		public INamedTypeSymbol ValueType;
+		public INamedTypeSymbol InjectAttribute;
+		public INamedTypeSymbol WithAttribute;
+		public INamedTypeSymbol SkipAttribute;
+		public INamedTypeSymbol List;
+
+		public Symbols (CSharpCompilation compilation)
+		{
+			Attribute = compilation.GetTypeByMetadataName (typeof (System.Attribute).FullName);
+			Object = compilation.GetTypeByMetadataName (typeof (System.Object).FullName);
+			ValueType = compilation.GetTypeByMetadataName (typeof (System.ValueType).FullName);
+			InjectAttribute = compilation.GetTypeByMetadataName ("Inject");
+			WithAttribute = compilation.GetTypeByMetadataName ("With");
+			SkipAttribute = compilation.GetTypeByMetadataName ("Skip");
+			List = compilation.GetTypeByMetadataName ("System.Collections.Generic.List`1");
 		}
 	}
 }
