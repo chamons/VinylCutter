@@ -111,6 +111,8 @@ public class SimpleClass { [With] int X; }
 public class SimpleClass { int X; }
 [Skip]
 public class SkippedSimpleClass { int X; }
+[Skip]
+public interface SkippedInterface { int X { get; } }
 ");
 			var info = parser.Parse ();
 			Assert.AreEqual (1, info.Count ());

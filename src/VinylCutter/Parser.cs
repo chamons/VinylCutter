@@ -106,7 +106,7 @@ namespace VinylCutter
 using System;
 using System.Collections.Generic;
 
-[AttributeUsage (AttributeTargets.Class | AttributeTargets.Struct)]
+[AttributeUsage (AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct)]
 public class Skip : System.Attribute { } 
 
 [AttributeUsage (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property)]
