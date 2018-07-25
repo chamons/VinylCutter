@@ -99,7 +99,7 @@ namespace VinylCutter
 	public class Parser
 	{
 		public static bool IsInternalConstruct (string name) => name.Contains ("<") || name.Contains (">");
-		static bool IsAttribute (TypeDefinition t) => t.BaseType.FullName == "System.Attribute";
+		static bool IsAttribute (TypeDefinition t) => t.BaseType != null && t.BaseType.FullName == "System.Attribute";
 
 		string Text;
 		string Prelude = @"
@@ -125,11 +125,18 @@ public class With : System.Attribute { }
 			{
 				string assemblyPath = compiler.Compile ();
 				var module = ModuleDefinition.ReadModule (assemblyPath);
-				foreach (TypeDefinition type in module.Types.Where (x => x.IsClass && !IsInternalConstruct (x.Name) && !IsAttribute (x)))
+				foreach (TypeDefinition type in module.Types)
 				{
-					bool skip = type.CustomAttributes.Any (x => x.AttributeType.Name == "Skip");
-					if (!skip)
-						infos.Add (ParseInfo.Create (type));
+					if (IsInternalConstruct (type.Name) || IsAttribute (type))
+						continue;
+
+					if (type.IsAbstract || type.IsEnum)
+						continue;
+
+					if (type.CustomAttributes.Any (x => x.AttributeType.Name == "Skip"))
+						continue;
+
+					infos.Add (ParseInfo.Create (type));
 				}
 			}
 			return infos;

@@ -120,6 +120,22 @@ public interface SkippedInterface { int X { get; } }
 		}
 
 		[Test]
+		public void SkipEnums ()
+		{
+			Parser parser = new Parser (@"
+public enum ParsingConfidence
+{
+	High,
+	Likely,
+	Low,
+	Invalid,
+}
+");
+			var info = parser.Parse ();
+			Assert.AreEqual (0, info.Count ());
+		}
+
+		[Test]
 		public void ThrowOnInvalidCompiledInput ()
 		{
 			Parser parser = new Parser (@"public class CompilerError {");
