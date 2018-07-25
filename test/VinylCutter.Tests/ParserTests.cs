@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Mono.Cecil;
 using NUnit.Framework;
 
 namespace VinylCutter.Tests
@@ -136,10 +135,21 @@ public enum ParsingConfidence
 		}
 
 		[Test]
-		public void ThrowOnInvalidCompiledInput ()
+		public void Inject ()
 		{
-			Parser parser = new Parser (@"public class CompilerError {");
-			Assert.Throws<ParseCompileError> (() => parser.Parse ());
+			Parser parser = new Parser (@"public class SimpleClass 
+{
+	int X; 
+	int Y; 
+
+	[Inject]
+	int Size => X * Y;
+}
+");
+			var info = parser.Parse ();
+			Assert.AreEqual ("\tint Size => X * Y;", info[0].InjectCode);
+			Assert.AreEqual (2, info[0].Items.Length);
+
 		}
 	}
 }

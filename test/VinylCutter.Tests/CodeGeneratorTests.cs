@@ -166,5 +166,28 @@ public partial class Container
 }
 ", generator.Generate ());
 		}
+
+		[Test]
+		public void Injection ()
+		{
+			ClassItem item = new ClassItem ("X", "Int32");
+			ClassItem item2 = new ClassItem ("Y", "Int32");
+			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, new ClassItem[] { item, item2 }, injectCode: "	int Size => X * Y;");
+			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
+			Assert.AreEqual (@"public partial class SimpleClass
+{
+	public int X { get; }
+	public int Y { get; }
+
+	public SimpleClass (int x, int y)
+	{
+		X = x;
+		Y = y;
+	}
+
+	int Size => X * Y;
+}
+", generator.Generate ());
+		}
 	}
 }

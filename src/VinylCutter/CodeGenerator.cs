@@ -51,6 +51,8 @@ namespace VinylCutter
 			GenerateWith (parseInfo, writer);
 
 			writer.Dedent ();
+			GenerateInjection (parseInfo, writer);
+
 			GenerateClassFooter (writer);
 		}
 
@@ -140,6 +142,15 @@ namespace VinylCutter
 		static void GenerateClassFooter (CodeWriter writer)
 		{
 			writer.WriteLine ("}");
+		}
+
+		static void GenerateInjection (ParseInfo parseInfo, CodeWriter writer)
+		{
+			if (!string.IsNullOrEmpty (parseInfo.InjectCode)) 
+			{
+				writer.WriteLine ();
+				writer.WriteLine (parseInfo.InjectCode);
+			}
 		}
 
 		static string GetTypeName (ClassItem item)

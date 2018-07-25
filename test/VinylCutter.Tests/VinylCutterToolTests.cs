@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Mono.Cecil;
 using NUnit.Framework;
 
 namespace VinylCutter.Tests

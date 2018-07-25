@@ -1,8 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Mono.Cecil;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace VinylCutter
 {
@@ -10,7 +13,6 @@ namespace VinylCutter
 	{
 		public string Name { get; private set; }
 		public string TypeName { get; private set; }
-		public TypeReference Type { get; private set; }
 		public bool IsCollection { get; private set; }
 		public bool IncludeWith { get; private set; }
 
@@ -25,27 +27,6 @@ namespace VinylCutter
 			IsCollection = isCollection;
 			IncludeWith = includeWith;
 		}
-
-		public static ClassItem Create (PropertyDefinition propertyDefinition)
-		{
-			return Create (propertyDefinition.Name, propertyDefinition.PropertyType, propertyDefinition.CustomAttributes.ElementAtOrDefault (0));
-		}
-
-		public static ClassItem Create (FieldDefinition fieldDefinition)
-		{
-			return Create (fieldDefinition.Name, fieldDefinition.FieldType, fieldDefinition.CustomAttributes.ElementAtOrDefault (0));
-		}
-
-		static ClassItem Create (string name, TypeReference type, CustomAttribute attribute)
-		{
-			bool includeWith = attribute != null && attribute.AttributeType.Name == "With";
-			if (type.FullName.Contains ("System.Collections.Generic.List")) 
-			{
-				GenericInstanceType genericInstance = (GenericInstanceType)type;
-				return new ClassItem (name, genericInstance.GenericArguments [0].Name, true, includeWith);
-			} 
-			return new ClassItem (name, type.Name, false, includeWith);
-		}
 	}
 
 	public enum Visibility { Public, Private }
@@ -57,49 +38,25 @@ namespace VinylCutter
 		public bool IsClass { get; private set; }
 		public ImmutableArray<ClassItem> Items;
 		public bool IncludeWith { get; private set; }
+		public string InjectCode { get; }
 
-		public ParseInfo (string name, bool isClass, Visibility visibility) : this (name, isClass, visibility, true, Enumerable.Empty<ClassItem> ())
-		{
-		}
-
-		public ParseInfo (string name, bool isClass, Visibility visibility, bool includeWith, IEnumerable<ClassItem> items)
+		public ParseInfo (string name, bool isClass, Visibility visibility, bool includeWith = false, IEnumerable<ClassItem> items = null, string injectCode = "")
 		{
 			Name = name;
 			Visibility = visibility;
 			IsClass = isClass;
-			Items = ImmutableArray.CreateRange (items);
+			Items = ImmutableArray.CreateRange (items ?? Enumerable.Empty<ClassItem> ());
 			IncludeWith = includeWith;
-		}
-
-		public static Visibility GetVisibility (TypeDefinition type)
-		{
-			if (type.IsPublic)
-				return Visibility.Public;
-			// https://github.com/chamons/VinylCutter/issues/3 
-			// if (type.IsNestedFamily)
-			//	return Visibility.Private;
-			return Visibility.Private;
-		}
-
-		public static ParseInfo Create (TypeDefinition type)
-		{
-			var properties = type.Properties
-			                     .Where (x => !Parser.IsInternalConstruct (x.Name))
-			                     .Select (x => ClassItem.Create (x));
-			var variables = type.Fields
-			                    .Where (x => !Parser.IsInternalConstruct (x.Name))
-			                    .Select (x => ClassItem.Create (x));
-			
-			bool isClass = type.BaseType.FullName != "System.ValueType";
-			bool includeWith = type.CustomAttributes.Any (x => x.AttributeType.Name == "With");
-			return new ParseInfo (type.Name, isClass, GetVisibility (type), includeWith, properties.Union (variables));
+			InjectCode = injectCode;
 		}
 	}
 
 	public class Parser
 	{
-		public static bool IsInternalConstruct (string name) => name.Contains ("<") || name.Contains (">");
-		static bool IsAttribute (TypeDefinition t) => t.BaseType != null && t.BaseType.FullName == "System.Attribute";
+		bool HasWith (ISymbol s) => s.GetAttributes ().Any (x => x.AttributeClass.Equals (WithAttributeSymbol));
+		bool HasInject (ISymbol s) => s.GetAttributes ().Any (x => x.AttributeClass.Equals (InjectAttributeSymbol));
+
+		static bool IsInternalConstruct (ISymbol s) => s.Name.Contains ("<") || s.Name.Contains (">");
 
 		string Text;
 		string Prelude = @"
@@ -111,7 +68,18 @@ public class Skip : System.Attribute { }
 
 [AttributeUsage (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property)]
 public class With : System.Attribute { } 
+
+[AttributeUsage (AttributeTargets.All)]
+public class Inject : System.Attribute { } 
 ";
+
+		List<ParseInfo> Infos;
+		INamedTypeSymbol AttributeSymbol;
+		INamedTypeSymbol InjectAttributeSymbol;
+		INamedTypeSymbol WithAttributeSymbol;
+		INamedTypeSymbol SkipAttributeSymbol;
+		INamedTypeSymbol ListSymbol;
+		SemanticModel Model;
 
 		public Parser (string text)
 		{
@@ -120,26 +88,78 @@ public class With : System.Attribute { }
 
 		public List<ParseInfo> Parse ()
 		{
-			var infos = new List<ParseInfo> ();
-			using (Compiler compiler = new Compiler (Prelude + Text))
+			Infos = new List<ParseInfo> ();
+
+			SyntaxTree tree = CSharpSyntaxTree.ParseText (Prelude + Text);
+			var root = (CompilationUnitSyntax)tree.GetRoot ();
+			var mscorlib = MetadataReference.CreateFromFile (typeof (object).Assembly.Location);
+			var compilation = CSharpCompilation.Create ("Vinyl").AddReferences (mscorlib).AddSyntaxTrees (tree);
+
+			AttributeSymbol = compilation.GetTypeByMetadataName (typeof (System.Attribute).FullName);
+			InjectAttributeSymbol = compilation.GetTypeByMetadataName ("Inject");
+			WithAttributeSymbol = compilation.GetTypeByMetadataName ("With");
+			SkipAttributeSymbol = compilation.GetTypeByMetadataName ("Skip");
+			ListSymbol = compilation.GetTypeByMetadataName ("System.Collections.Generic.List`1");
+
+			Model = compilation.GetSemanticModel (tree);
+
+			foreach (var c in root.DescendantNodes().OfType<ClassDeclarationSyntax>())
+				HandlePossibleRecord (Model.GetDeclaredSymbol (c));
+
+			foreach (var s in root.DescendantNodes ().OfType<StructDeclarationSyntax> ())
+				HandlePossibleRecord (Model.GetDeclaredSymbol (s));
+
+			return Infos;
+		}
+
+		void HandlePossibleRecord (INamedTypeSymbol itemInfo)
+		{
+			if (itemInfo.IsAbstract || itemInfo.EnumUnderlyingType != null)
+				return;
+
+			if (itemInfo.BaseType.Equals (AttributeSymbol))
+				return;
+
+			if (itemInfo.GetAttributes ().Any (x => x.AttributeClass.Equals (SkipAttributeSymbol)))
+				return;
+
+			List<ClassItem> classItems = new List<ClassItem> ();
+
+			foreach (var member in itemInfo.GetMembers ().OfType<IPropertySymbol>().Where (x => !IsInternalConstruct (x) && !HasInject (x))) 
+				classItems.Add (CreateClassItem (member, member.Type));
+
+			foreach (var field in itemInfo.GetMembers ().OfType<IFieldSymbol>().Where (x => !IsInternalConstruct(x) && !HasInject (x)))
+				classItems.Add (CreateClassItem (field, field.Type));
+
+			string injectCode = GetInjectionCode (itemInfo);
+
+			Visibility visibility = itemInfo.DeclaredAccessibility == Accessibility.Public ? Visibility.Public : Visibility.Private;
+			Infos.Add (new ParseInfo (itemInfo.Name, itemInfo.IsReferenceType, visibility, HasWith (itemInfo), classItems, injectCode));
+		}
+
+		string GetInjectionCode (INamedTypeSymbol itemInfo)
+		{
+			SourceText sourceText = Model.SyntaxTree.GetText ();
+			StringBuilder builder = new StringBuilder ();
+			foreach (var injectItem in itemInfo.GetMembers ().Where (x => HasInject (x)))
 			{
-				string assemblyPath = compiler.Compile ();
-				var module = ModuleDefinition.ReadModule (assemblyPath);
-				foreach (TypeDefinition type in module.Types)
+				foreach (var syntaxReferece in injectItem.DeclaringSyntaxReferences)
 				{
-					if (IsInternalConstruct (type.Name) || IsAttribute (type))
-						continue;
-
-					if (type.IsAbstract || type.IsEnum)
-						continue;
-
-					if (type.CustomAttributes.Any (x => x.AttributeType.Name == "Skip"))
-						continue;
-
-					infos.Add (ParseInfo.Create (type));
+					var lines = sourceText.GetSubText (syntaxReferece.Span).Lines;
+					builder.Append (string.Join ("\n", lines.Skip (1)));
 				}
 			}
-			return infos;
+			return builder.ToString ();
+		}
+
+		ClassItem CreateClassItem (ISymbol symbol, ITypeSymbol type)
+		{
+			if (type.OriginalDefinition.Equals (ListSymbol))
+			{
+				INamedTypeSymbol t = (INamedTypeSymbol)type;
+				return new ClassItem (symbol.Name, t.TypeArguments[0].Name, true, HasWith (symbol));
+			}
+			return new ClassItem (symbol.Name, type.Name, false, HasWith (symbol));
 		}
 	}
 }

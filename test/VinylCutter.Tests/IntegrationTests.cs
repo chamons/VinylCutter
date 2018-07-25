@@ -23,6 +23,9 @@ public class PointList
 	[With]
 	List<Point> Points;
 	string Name;
+
+	[Inject]
+	int Length => Points.Count;
 }
 ";
 			Parser parser = new Parser (testCode);
@@ -66,6 +69,8 @@ public partial class PointList
 	{
 		return new PointList (points, Name);
 	}
+
+	int Length => Points.Count;
 }
 ", output);
 		}
