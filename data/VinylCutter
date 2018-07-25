@@ -1,0 +1,5 @@
+#!/bin/bash
+
+MYDIR="$(dirname "$(which "$0")")"
+
+mono $MYDIR/bin/VinylCutter.exe $@

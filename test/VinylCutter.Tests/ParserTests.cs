@@ -5,8 +5,6 @@ using NUnit.Framework;
 
 namespace VinylCutter.Tests
 {
-
-		
 	[TestFixture]
 	public class ParserTests
 	{

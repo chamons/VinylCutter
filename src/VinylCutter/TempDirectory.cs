@@ -10,8 +10,22 @@ namespace VinylCutter
 
 		public TempDirectory ()
 		{
-			Path = System.IO.Path.Combine (System.IO.Path.GetTempPath (), "VinylCutter");
+			Path = FindFreeDirectory ();
 			Directory.CreateDirectory (Path);
+		}
+
+		static string FindFreeDirectory ()
+		{
+			int attempt = 0;
+			string suffix = "";
+			while (true)
+			{
+				string path = System.IO.Path.Combine (System.IO.Path.GetTempPath (), "VinylCutter" + suffix);
+				if (!Directory.Exists (path))
+					return path;
+				attempt++;
+				suffix = "-" + attempt.ToString ();
+			}
 		}
 
 		bool Disposed = false;
