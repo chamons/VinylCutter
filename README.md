@@ -41,4 +41,4 @@ There is a [proposal](https://github.com/dotnet/csharplang/blob/master/proposals
 
 ## Building
 
-- Open VinylCutter.sln or `msbuild VinylCutter.sln`.
+- Open VinylCutter.sln or `make prepare && make`.
