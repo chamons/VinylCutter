@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,18 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace VinylCutter
 {
+	public class ParseCompileError : Exception
+	{
+		public string ErrorText;
+
+		public ParseCompileError (string errorText)
+		{
+			ErrorText = errorText;
+		}
+
+		public override string ToString () => $"ParseCompileError -  {ErrorText}";
+	}
+	
 	public class ClassItem
 	{
 		public string Name { get; private set; }
@@ -73,7 +86,7 @@ public class With : System.Attribute { }
 public class Inject : System.Attribute { }
 
 [AttributeUsage (AttributeTargets.Field | AttributeTargets.Property)]
-public class Default : System.Attribute { public Default (object value) {} }
+public class Default : System.Attribute { public Default (string value) {} }
 ";
 
 		List<ParseInfo> Infos;
@@ -92,7 +105,12 @@ public class Default : System.Attribute { public Default (object value) {} }
 			SyntaxTree tree = CSharpSyntaxTree.ParseText (Prelude + Text);
 			var root = (CompilationUnitSyntax)tree.GetRoot ();
 			var mscorlib = MetadataReference.CreateFromFile (typeof (object).Assembly.Location);
-			var compilation = CSharpCompilation.Create ("Vinyl").AddReferences (mscorlib).AddSyntaxTrees (tree);
+			var compilation = CSharpCompilation.Create ("Vinyl").AddReferences (mscorlib).AddSyntaxTrees (tree).WithOptions (new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
+
+			var compilerDiagnostics = compilation.GetDiagnostics ();
+			var compilerErrors = compilerDiagnostics.Where(i => i.Severity == DiagnosticSeverity.Error); 
+			if (compilerErrors.Count() > 0)
+				throw new ParseCompileError (string.Join ("\n", compilerErrors.Select(x => x.ToString ())));
 
 			Symbols = new Symbols (compilation);
 
@@ -182,8 +200,8 @@ public class Default : System.Attribute { public Default (object value) {} }
 			AttributeData defaultAttribute = symbol.GetAttributes ().FirstOrDefault (x => x.AttributeClass.Equals (Symbols.DefaultAttribute));
 			if (defaultAttribute == null)
 				return null;
-			object defaultValue = defaultAttribute.ConstructorArguments[0].Value;
-			return defaultValue == null ? "null" : defaultValue.ToString (); // Default (null) is encoded as null
+
+			return (string)defaultAttribute.ConstructorArguments[0].Value;
 		}
 	}
 

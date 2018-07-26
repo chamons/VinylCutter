@@ -156,7 +156,7 @@ public enum ParsingConfidence
 		[Test]
 		public void Inherit ()
 		{
-			Parser parser = new Parser (@"public class Foo {}
+			Parser parser = new Parser (@"public interface IFoo {} public class Foo {}
 public class SimpleClass : Foo, IFoo
 {
 	int X; 
@@ -172,7 +172,7 @@ public class SimpleClass : Foo, IFoo
 		{
 			Parser parser = new Parser (@"public class SimpleClass
 {
-	[Default (0)]
+	[Default (""0"")]
 	int X;
 	int Y; 
 }
@@ -187,7 +187,7 @@ public class SimpleClass : Foo, IFoo
 		{
 			Parser parser = new Parser (@"public class SimpleClass
 {
-	[Default (null)]
+	[Default (""null"")]
 	string X;
 }
 ");
@@ -195,5 +195,26 @@ public class SimpleClass : Foo, IFoo
 			Assert.AreEqual ("null", info[0].Items[0].DefaultValue);
 		}
 
+		[Test]
+		public void BoolDefault ()
+		{
+			Parser parser = new Parser (@"public class SimpleClass
+{
+	[Default (""false"")]
+	bool X;
+}
+");
+			var info = parser.Parse ();
+			Assert.AreEqual ("false", info[0].Items[0].DefaultValue);
+		}
+
+		[Test]
+		public void CompileError ()
+		{
+			Parser parser = new Parser (@"public class SimpleClass
+{
+");
+			Assert.Throws<ParseCompileError> (() => parser.Parse ());
+		}
 	}
 }

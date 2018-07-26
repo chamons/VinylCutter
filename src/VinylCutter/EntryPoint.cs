@@ -7,7 +7,7 @@ namespace VinylCutter
 {
 	class EntryPoint
 	{
-		public static void Main (string[] args)
+		public static int Main (string[] args)
 		{
 			VinylCutterTool tool = new VinylCutterTool ();
 			bool showHelp = false;
@@ -31,10 +31,24 @@ namespace VinylCutter
 			if (showHelp || !tool.ValidateOptions (files))
 			{
 				ShowHelp (p);
-				return;
+				return 1;
 			}
 
-			tool.Run ();
+			try 
+			{
+				tool.Run ();
+			}
+			catch (FileNotFoundException e)
+			{
+				Console.Error.WriteLine ($"Unable to open file {e.FileName}");
+				return -1;
+			}
+			catch (ParseCompileError e)
+			{
+				Console.Error.WriteLine ($"Compile error while processing record definition: {e.ErrorText}");
+				return -1;
+			}
+			return 0;
 		}
 
 		static void ShowHelp (OptionSet p)

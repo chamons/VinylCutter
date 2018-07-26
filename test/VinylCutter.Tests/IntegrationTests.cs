@@ -10,12 +10,12 @@ namespace VinylCutter.Tests
 		[Test]
 		public void SmokeTest ()
 		{
-			string testCode = @"
+			string testCode = @"public interface IPoint {}
 [With]
 public class Point : IPoint
 {
 	double X;
-	[Default (42)]
+	[Default (""42"")]
 	double Y;
 }
 
