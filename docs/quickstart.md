@@ -108,4 +108,4 @@ namespace Test
 - Compile them together in a new csproj, along with the System.Collections.Immutable nuget.
 
 
-This sample can be found in the [sample folder](https://github.com/chamons/VinylCutter/tree/master/samples/point/).
+This sample can be found in the [sample folder](https://github.com/chamons/VinylCutter/tree/master/sample/point).
