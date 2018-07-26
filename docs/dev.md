@@ -46,6 +46,16 @@ The coding conventions are roughly the ones from [mono](http://www.mono-project.
 
 PRs should be filed for all changes moving forward.
 
+## src/VinylCutter/ParserRecords.g.cs
+
+VinyCutter consumes its own output as both a time saver and a form of dogfood.
+
+To prevent bootstrapping issues, where you need the tool to build said tool, the output has been checked into version control.
+
+make regenerate will process src/VinylCutter/ParserRecords.rcs
+
+Both the definition and the output should be checked in for now.
+
 ## Vim Tricks
 
 The unit test workflow in Visual Studio for Mac is a bit rough, so I often run tests from vim. 
