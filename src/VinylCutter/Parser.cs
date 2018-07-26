@@ -10,60 +10,6 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace VinylCutter
 {
-	public class ParseCompileError : Exception
-	{
-		public string ErrorText;
-
-		public ParseCompileError (string errorText)
-		{
-			ErrorText = errorText;
-		}
-
-		public override string ToString () => $"ParseCompileError -  {ErrorText}";
-	}
-	
-	public class ClassItem
-	{
-		public string Name { get; private set; }
-		public string TypeName { get; private set; }
-		public bool IsCollection { get; private set; }
-		public bool IncludeWith { get; private set; }
-		public string DefaultValue { get; private set; }
-
-		public ClassItem (string name, string typeName, bool isCollection = false, bool includeWith = false, string defaultValue = null)
-		{
-			Name = name;
-			TypeName = typeName;
-			IsCollection = isCollection;
-			IncludeWith = includeWith;
-			DefaultValue = defaultValue;
-		}
-	}
-
-	public enum Visibility { Public, Private }
-
-	public class ParseInfo
-	{
-		public string Name { get; private set; }
-		public Visibility Visibility { get; private set; }
-		public bool IsClass { get; private set; }
-		public ImmutableArray<ClassItem> Items;
-		public bool IncludeWith { get; private set; }
-		public string BaseTypes { get; private set; }
-		public string InjectCode { get; }
-
-		public ParseInfo (string name, bool isClass, Visibility visibility, bool includeWith = false, IEnumerable<ClassItem> items = null, string baseTypes = "", string injectCode = "")
-		{
-			Name = name;
-			Visibility = visibility;
-			IsClass = isClass;
-			Items = ImmutableArray.CreateRange (items ?? Enumerable.Empty<ClassItem> ());
-			IncludeWith = includeWith;
-			BaseTypes = baseTypes;
-			InjectCode = injectCode;
-		}
-	}
-
 	public class Parser
 	{
 		bool HasWith (ISymbol s) => s.GetAttributes ().Any (x => x.AttributeClass.Equals (Symbols.WithAttribute));
@@ -89,110 +35,142 @@ public class Inject : System.Attribute { }
 public class Default : System.Attribute { public Default (string value) {} }
 ";
 
-		List<ParseInfo> Infos;
+		List<RecordInfo> Records;
 		Symbols Symbols;
 		SemanticModel Model;
+		SourceText SourceText;
+		string FirstNamespace;
 
 		public Parser (string text)
 		{
 			Text = text;
 		}
 
-		public List<ParseInfo> Parse ()
+		public FileInfo Parse ()
 		{
-			Infos = new List<ParseInfo> ();
+			Records = new List<RecordInfo>();
+			FirstNamespace = "";
 
 			SyntaxTree tree = CSharpSyntaxTree.ParseText (Prelude + Text);
-			var root = (CompilationUnitSyntax)tree.GetRoot ();
-			var mscorlib = MetadataReference.CreateFromFile (typeof (object).Assembly.Location);
-			var compilation = CSharpCompilation.Create ("Vinyl").AddReferences (mscorlib).AddSyntaxTrees (tree).WithOptions (new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
-
-			var compilerDiagnostics = compilation.GetDiagnostics ();
-			var compilerErrors = compilerDiagnostics.Where(i => i.Severity == DiagnosticSeverity.Error); 
-			if (compilerErrors.Count() > 0)
-				throw new ParseCompileError (string.Join ("\n", compilerErrors.Select(x => x.ToString ())));
-
+			CSharpCompilation compilation = Compile (tree);
+			Model = compilation.GetSemanticModel (tree);
+			SourceText = Model.SyntaxTree.GetText ();
 			Symbols = new Symbols (compilation);
 
-			Model = compilation.GetSemanticModel (tree);
-
-			foreach (var c in root.DescendantNodes().OfType<ClassDeclarationSyntax>())
+			var root = (CompilationUnitSyntax)tree.GetRoot ();
+			foreach (var c in root.DescendantNodes ().OfType<ClassDeclarationSyntax> ())
 				HandlePossibleRecord (Model.GetDeclaredSymbol (c));
 
 			foreach (var s in root.DescendantNodes ().OfType<StructDeclarationSyntax> ())
 				HandlePossibleRecord (Model.GetDeclaredSymbol (s));
 
-			return Infos;
+			string injectCode = FindTopLevelInjectItems (root);
+
+			return new FileInfo (Records, injectCode, FirstNamespace);
 		}
 
-		void HandlePossibleRecord (INamedTypeSymbol itemInfo)
+		static CSharpCompilation Compile (SyntaxTree tree)
 		{
-			if (itemInfo.IsAbstract || itemInfo.EnumUnderlyingType != null)
-				return;
+			var root = (CompilationUnitSyntax)tree.GetRoot ();
+			var mscorlib = MetadataReference.CreateFromFile (typeof (object).Assembly.Location);
+			var compilation = CSharpCompilation.Create ("Vinyl").AddReferences (mscorlib).AddSyntaxTrees (tree).WithOptions (new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
 
-			if (itemInfo.BaseType.Equals (Symbols.Attribute))
-				return;
+			var compilerDiagnostics = compilation.GetDiagnostics ();
+			var compilerErrors = compilerDiagnostics.Where (i => i.Severity == DiagnosticSeverity.Error);
+			if (compilerErrors.Count () > 0)
+				throw new ParseCompileError (string.Join ("\n", compilerErrors.Select (x => x.ToString ())));
 
-			if (itemInfo.GetAttributes ().Any (x => x.AttributeClass.Equals (Symbols.SkipAttribute)))
-				return;
-
-			List<ClassItem> classItems = new List<ClassItem> ();
-
-			foreach (var member in itemInfo.GetMembers ().OfType<IPropertySymbol>().Where (x => !IsInternalConstruct (x) && !HasInject (x))) 
-				classItems.Add (CreateClassItem (member, member.Type));
-
-			foreach (var field in itemInfo.GetMembers ().OfType<IFieldSymbol>().Where (x => !IsInternalConstruct(x) && !HasInject (x)))
-				classItems.Add (CreateClassItem (field, field.Type));
-
-			string baseType = GetBaseTypes (itemInfo);
-			string injectCode = GetInjectionCode (itemInfo);
-
-			Visibility visibility = itemInfo.DeclaredAccessibility == Accessibility.Public ? Visibility.Public : Visibility.Private;
-			Infos.Add (new ParseInfo (itemInfo.Name, itemInfo.IsReferenceType, visibility, includeWith : HasWith (itemInfo), items: classItems, baseTypes: baseType, injectCode: injectCode));
+			return compilation;
 		}
 
-		string GetBaseTypes (INamedTypeSymbol itemInfo)
+		string FindTopLevelInjectItems (CompilationUnitSyntax root)
 		{
-			List<string> baseTypes = new List<string> ();
-			string baseType = GetBaseType (itemInfo);
-			if (baseType != null)
-				baseTypes.Add (baseType);
-			baseTypes.AddRange (itemInfo.Interfaces.Select (x => x.Name));
-			return string.Join (", ", baseTypes);
-		}
-
-		string GetBaseType (INamedTypeSymbol itemInfo)
-		{
-			if (itemInfo.IsValueType)
-				return itemInfo.BaseType.Equals (Symbols.ValueType) ? null : itemInfo.BaseType.Name;
-			else
-				return itemInfo.BaseType.Equals (Symbols.Object) ? null : itemInfo.BaseType.Name;
-		}
-
-		string GetInjectionCode (INamedTypeSymbol itemInfo)
-		{
-			SourceText sourceText = Model.SyntaxTree.GetText ();
 			StringBuilder builder = new StringBuilder ();
-			foreach (var injectItem in itemInfo.GetMembers ().Where (x => HasInject (x)))
+
+			foreach (var s in root.DescendantNodes (descendIntoChildren: n => n == root || n is NamespaceDeclarationSyntax))
 			{
-				foreach (var syntaxReferece in injectItem.DeclaringSyntaxReferences)
-				{
-					var lines = sourceText.GetSubText (syntaxReferece.Span).Lines;
-					builder.Append (string.Join ("\n", lines.Skip (1)));
-				}
+				ISymbol symbol = Model.GetDeclaredSymbol (s);
+				if (symbol != null && HasInject (symbol))
+					builder.Append (GetSourceCode (symbol));
 			}
 			return builder.ToString ();
 		}
 
-		ClassItem CreateClassItem (ISymbol symbol, ITypeSymbol type)
+		void HandlePossibleRecord (INamedTypeSymbol symbol)
+		{
+			if (symbol.IsAbstract || symbol.EnumUnderlyingType != null)
+				return;
+
+			if (symbol.BaseType.Equals (Symbols.Attribute))
+				return;
+
+			if (symbol.GetAttributes ().Any (x => x.AttributeClass.Equals (Symbols.SkipAttribute)))
+				return;
+
+			if (FirstNamespace == "" && symbol.ContainingNamespace != null)
+				FirstNamespace = symbol.ContainingNamespace.Name;
+
+			List<ItemInfo> items = new List<ItemInfo> ();
+
+			foreach (var member in symbol.GetMembers ().OfType<IPropertySymbol>().Where (x => !IsInternalConstruct (x) && !HasInject (x))) 
+				items.Add (CreateClassItem (member, member.Type));
+
+			foreach (var field in symbol.GetMembers ().OfType<IFieldSymbol>().Where (x => !IsInternalConstruct(x) && !HasInject (x)))
+				items.Add (CreateClassItem (field, field.Type));
+
+			string baseType = GetBaseTypes (symbol);
+			string injectCode = FindInjectionCodeOnMembers (symbol);
+
+			Visibility visibility = symbol.DeclaredAccessibility == Accessibility.Public ? Visibility.Public : Visibility.Private;
+			Records.Add (new RecordInfo (symbol.Name, symbol.IsReferenceType, visibility, includeWith : HasWith (symbol), items: items, baseTypes: baseType, injectCode: injectCode));
+		}
+
+		string GetBaseTypes (INamedTypeSymbol symbol)
+		{
+			List<string> baseTypes = new List<string> ();
+			string baseType = GetBaseType (symbol);
+			if (baseType != null)
+				baseTypes.Add (baseType);
+			baseTypes.AddRange (symbol.Interfaces.Select (x => x.Name));
+			return string.Join (", ", baseTypes);
+		}
+
+		string GetBaseType (INamedTypeSymbol symbol)
+		{
+			if (symbol.IsValueType)
+				return symbol.BaseType.Equals (Symbols.ValueType) ? null : symbol.BaseType.Name;
+			else
+				return symbol.BaseType.Equals (Symbols.Object) ? null : symbol.BaseType.Name;
+		}
+
+		string FindInjectionCodeOnMembers (INamedTypeSymbol symbol)
+		{
+			StringBuilder builder = new StringBuilder ();
+
+			foreach (var injectItem in symbol.GetMembers ().Where (x => HasInject (x)))
+				builder.Append (GetSourceCode (injectItem));
+
+			return builder.ToString ();
+		}
+
+		string GetSourceCode (ISymbol injectItem)
+		{
+			if (injectItem.DeclaringSyntaxReferences.Length > 1)
+				throw new InvalidOperationException ("Inject split over multiple DeclaringSyntaxReferences?");
+
+			var lines = SourceText.GetSubText (injectItem.DeclaringSyntaxReferences[0].Span).Lines;
+			return string.Join ("\n", lines.Skip (1));
+		}
+
+		ItemInfo CreateClassItem (ISymbol symbol, ITypeSymbol type)
 		{
 			string defaultValue = GetDefaultValue (symbol);
 			if (type.OriginalDefinition.Equals (Symbols.List))
 			{
 				INamedTypeSymbol t = (INamedTypeSymbol)type;
-				return new ClassItem (symbol.Name, t.TypeArguments[0].Name, true, HasWith (symbol), defaultValue);
+				return new ItemInfo (symbol.Name, t.TypeArguments[0].Name, true, HasWith (symbol), defaultValue);
 			}
-			return new ClassItem (symbol.Name, type.Name, false, HasWith (symbol), defaultValue);
+			return new ItemInfo (symbol.Name, type.Name, false, HasWith (symbol), defaultValue);
 		}
 	
 		string GetDefaultValue (ISymbol symbol)
@@ -201,7 +179,12 @@ public class Default : System.Attribute { public Default (string value) {} }
 			if (defaultAttribute == null)
 				return null;
 
-			return (string)defaultAttribute.ConstructorArguments[0].Value;
+			string defaultValue = (string)defaultAttribute.ConstructorArguments[0].Value;
+			// Special case [Default ("")] to two double quotes, not empty string
+			// Escaping a common case is not fun
+			if (defaultValue == "")
+				return "\"\"";
+			return defaultValue;
 		}
 	}
 

@@ -9,10 +9,5 @@ namespace VinylCutter
 		{
 			yield return item;
 		}
-
-		public static ImmutableList<T> YieldList<T> (this T item)
-		{
-			return item.Yield ().ToImmutableList ();
-		}
 	}
 }

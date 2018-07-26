@@ -66,8 +66,8 @@ namespace VinylCutter
 		string ParseOneFile (string text)
 		{
 			var parser = new Parser (text);
-			var parseInfo = parser.Parse ();
-			var codeGenerator = new CodeGenerator (parseInfo);
+			FileInfo file = parser.Parse ();
+			var codeGenerator = new CodeGenerator (file);
 			return codeGenerator.Generate ();
 		}
 

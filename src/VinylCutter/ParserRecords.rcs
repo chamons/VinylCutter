@@ -1,0 +1,59 @@
+// run make regenerate to update ParserRecords.g.cs
+namespace VinylCutter
+{
+	public class ParseCompileError : Exception
+	{
+		public string ErrorText;
+
+		[Inject]
+		public override string ToString () => $"ParseCompileError -  {ErrorText}";
+	}
+
+	public class ItemInfo
+	{
+		public string Name;
+		public string TypeName;
+
+		[Default ("false")]
+		public bool IsCollection;
+		
+		[Default ("false")]
+		public bool IncludeWith;
+		
+		[Default ("null")]
+		public string DefaultValue;
+	}
+
+	[Inject]
+	public enum Visibility { Public, Private }
+
+	public class RecordInfo
+	{
+		public string Name;
+		public bool IsClass;
+		public Visibility Visibility;
+
+		[Default ("false")]	
+		public bool IncludeWith;
+
+		[Default ("null")]	
+		public List<ItemInfo> Items;
+
+		[Default ("")]	
+		public string BaseTypes;
+
+		[Default ("")]	
+		public string InjectCode;
+	}
+
+	public class FileInfo
+	{
+		public List<RecordInfo> Records;
+		
+		[Default ("")]	
+		public string InjectCode;
+		
+		[Default ("")]	
+		public string GlobalNamespace;
+	}
+}

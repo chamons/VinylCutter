@@ -7,137 +7,180 @@ namespace VinylCutter
 {
 	public class CodeGenerator
 	{
-		List <ParseInfo> ParseInfos;
+		FileInfo File;
 
-		public CodeGenerator (IEnumerable <ParseInfo> parseInfos)
+		public CodeGenerator (FileInfo file)
 		{
-			ParseInfos = parseInfos.ToList ();
+			File = file;
 		}
 
 		public string Generate ()
 		{
 			CodeWriter writer = new CodeWriter ();
 			GenerateUsings (writer);
-			for (int i = 0 ; i < ParseInfos.Count ; ++i)
+
+			GenerateNamespaceHeader (writer);
+
+			GenerateTopLevelInjects (writer);
+
+			for (int i = 0 ; i < File.Records.Length ; ++i)
 			{
-				ParseInfo parseInfo = ParseInfos[i];
-				GenerateFromInfo (parseInfo, writer);
-				if (i != ParseInfos.Count - 1)
+				RecordInfo record = File.Records[i];
+				GenerateRecord (record, writer);
+				if (i != File.Records.Length - 1)
 					writer.WriteLine ();
 			}
+			GenerateNamespaceFooter (writer);
 
 			return writer.Generate ();
 		}
 
+		void GenerateTopLevelInjects (CodeWriter writer)
+		{
+			if (!string.IsNullOrEmpty (File.InjectCode))
+			{
+				writer.WriteLineIgnoringIndent (File.InjectCode);
+				writer.WriteLine ();
+			}
+		}
+
+		void GenerateNamespaceHeader (CodeWriter writer)
+		{
+			if (!string.IsNullOrEmpty (File.GlobalNamespace))
+			{
+				writer.WriteLine ($"namespace {File.GlobalNamespace}");
+				writer.WriteLine ("{");
+				writer.Indent ();
+			}
+		}
+
+		void GenerateNamespaceFooter (CodeWriter writer)
+		{
+			if (!string.IsNullOrEmpty (File.GlobalNamespace)) 
+			{
+				writer.Dedent ();
+				writer.WriteLine ("}");
+			}
+		}
+
 		void GenerateUsings (CodeWriter writer)
 		{
-			if (ParseInfos.Any (x => x.Items.Any (y => y.IsCollection)))
+			if (File.Records.Any (x => x.Items.Any (y => y.IsCollection)))
 			{
+				writer.WriteLine ("using System;");
+				writer.WriteLine ("using System.Collections.Generic;");
 				writer.WriteLine ("using System.Collections.Immutable;");
 				writer.WriteLine ();
 			}
 		}
 
-		static void GenerateFromInfo (ParseInfo parseInfo, CodeWriter writer)
+		static void GenerateRecord (RecordInfo record, CodeWriter writer)
 		{
-			GenerateClassHeader (parseInfo, writer);
+			GenerateClassHeader (record, writer);
 			writer.Indent ();
 
-			foreach (var classItem in parseInfo.Items)
+			foreach (var classItem in record.Items)
 				GenerateProperty (classItem, writer);
-			if (parseInfo.Items.Length > 0)
+			if (record.Items.Length > 0)
 				writer.WriteLine ();
-			GenerateConstructor (parseInfo, writer);
-			GenerateWith (parseInfo, writer);
+			GenerateConstructor (record, writer);
+			GenerateWith (record, writer);
 
 			writer.Dedent ();
-			GenerateInjection (parseInfo, writer);
+			GenerateInjection (record, writer);
 
 			GenerateClassFooter (writer);
 		}
 
-		static string CreateConstructorArgs (ParseInfo parseInfo)
+		static string CreateConstructorArgs (RecordInfo record)
 		{
 			StringBuilder builder = new StringBuilder ();
-			for (int i = 0 ; i < parseInfo.Items.Length ; ++i)
+			for (int i = 0 ; i < record.Items.Length ; ++i)
 			{
-				ClassItem classItem = parseInfo.Items[i];
+				ItemInfo classItem = record.Items[i];
 				string defaultValue = classItem.DefaultValue != null ? $" = {classItem.DefaultValue}" : "";
-				builder.Append ($"{GetTypeName (classItem)} {classItem.Name.CamelPrefix ()}{defaultValue}");
-				if (i != parseInfo.Items.Length - 1)
+				builder.Append ($"{GetTypeName (classItem, true)} {classItem.Name.CamelPrefix ()}{defaultValue}");
+				if (i != record.Items.Length - 1)
 					builder.Append (", ");
 			}
 			return builder.ToString ();
 		}
 		
-		static string CreateConstructorInvokeArgs (ParseInfo parseInfo, int indexToNotCapitalize = -1)
+		static string CreateConstructorInvokeArgs (RecordInfo record, int indexToNotCapitalize = -1)
 		{
 			StringBuilder builder = new StringBuilder ();
-			for (int i = 0 ; i < parseInfo.Items.Length ; ++i)
+			for (int i = 0 ; i < record.Items.Length ; ++i)
 			{
-				ClassItem classItem = parseInfo.Items[i];
+				ItemInfo classItem = record.Items[i];
 				string classItemName = indexToNotCapitalize == i ? classItem.Name.CamelPrefix () : classItem.Name;
 				builder.Append (classItemName);
-				if (i != parseInfo.Items.Length - 1)
+				if (i != record.Items.Length - 1)
 					builder.Append (", ");
 			}
 			return builder.ToString ();
 		}
 
 
-		static void GenerateConstructor (ParseInfo parseInfo, CodeWriter writer)
+		static void GenerateConstructor (RecordInfo record, CodeWriter writer)
 		{
-			if (parseInfo.Items.Length == 0)
+			if (record.Items.Length == 0)
 				return;
 
-			writer.WriteLine ($"public {parseInfo.Name} ({CreateConstructorArgs (parseInfo)})");
+			writer.WriteLine ($"public {record.Name} ({CreateConstructorArgs (record)})");
 			writer.WriteLine ("{");
 			writer.Indent ();
-			foreach (var classItem in parseInfo.Items)
-				writer.WriteLine ($"{classItem.Name} = {classItem.Name.CamelPrefix ()};");
+			foreach (var classItem in record.Items)
+				writer.WriteLine ($"{classItem.Name} = {GenerateFieldAssign (classItem)};");
 			writer.Dedent ();
 			writer.WriteLine ("}");
 		}
 
-		static void GenerateWith (ParseInfo parseInfo, CodeWriter writer)
+		static string GenerateFieldAssign (ItemInfo item)
 		{
-			if (parseInfo.Items.Length == 0)
+			if (item.IsCollection)
+				return $"ImmutableArray.CreateRange ({item.Name.CamelPrefix ()} ?? Array.Empty<{MakeFriendlyTypeName (item.TypeName)}> ())";
+			return item.Name.CamelPrefix ();
+		}
+
+		static void GenerateWith (RecordInfo record, CodeWriter writer)
+		{
+			if (record.Items.Length == 0)
 				return;
 
-			if (!(parseInfo.IncludeWith || parseInfo.Items.Any (x => x.IncludeWith)))
+			if (!(record.IncludeWith || record.Items.Any (x => x.IncludeWith)))
 				return;
 
-			for (int i = 0 ; i < parseInfo.Items.Length ; ++i)
+			for (int i = 0 ; i < record.Items.Length ; ++i)
 			{
-				if (!(parseInfo.IncludeWith || parseInfo.Items[i].IncludeWith))
+				if (!(record.IncludeWith || record.Items[i].IncludeWith))
 					continue;
 
 				writer.WriteLine ();
-				ClassItem classItem = parseInfo.Items[i];
-				string itemTypeName = GetTypeName (classItem);
-				writer.WriteLine ($"public {parseInfo.Name} With{classItem.Name} ({itemTypeName} {classItem.Name.CamelPrefix ()})");
+				ItemInfo classItem = record.Items[i];
+				string itemTypeName = GetTypeName (classItem, true);
+				writer.WriteLine ($"public {record.Name} With{classItem.Name} ({itemTypeName} {classItem.Name.CamelPrefix ()})");
 				writer.WriteLine ("{");
 				writer.Indent ();
 
-				writer.WriteLine ($"return new {parseInfo.Name} ({CreateConstructorInvokeArgs (parseInfo, i)});");
+				writer.WriteLine ($"return new {record.Name} ({CreateConstructorInvokeArgs (record, i)});");
 
 				writer.Dedent ();
 				writer.WriteLine ("}");
 			}
 		}
 
-		static void GenerateProperty (ClassItem item, CodeWriter writer)
+		static void GenerateProperty (ItemInfo item, CodeWriter writer)
 		{
-			writer.WriteLine ($"public {GetTypeName (item)} {item.Name} {{ get; }}");
+			writer.WriteLine ($"public {GetTypeName (item, false)} {item.Name} {{ get; }}");
 		}
 
-		static void GenerateClassHeader (ParseInfo parseInfo, CodeWriter writer)
+		static void GenerateClassHeader (RecordInfo record, CodeWriter writer)
 		{
 			// https://github.com/chamons/VinylCutter/issues/3		
-			string visibility = parseInfo.Visibility == Visibility.Public ? "public " : "";
-			string recordType = parseInfo.IsClass ? "class" : "struct";
-			string baseTypes = parseInfo.BaseTypes != "" ? $" : {parseInfo.BaseTypes}" : "";
-			writer.WriteLine ($"{visibility}partial {recordType} {parseInfo.Name}{baseTypes}");
+			string visibility = record.Visibility == Visibility.Public ? "public " : "";
+			string recordType = record.IsClass ? "class" : "struct";
+			string baseTypes = record.BaseTypes != "" ? $" : {record.BaseTypes}" : "";
+			writer.WriteLine ($"{visibility}partial {recordType} {record.Name}{baseTypes}");
 			writer.WriteLine ("{");
 		}
 		
@@ -146,19 +189,22 @@ namespace VinylCutter
 			writer.WriteLine ("}");
 		}
 
-		static void GenerateInjection (ParseInfo parseInfo, CodeWriter writer)
+		static void GenerateInjection (RecordInfo record, CodeWriter writer)
 		{
-			if (!string.IsNullOrEmpty (parseInfo.InjectCode)) 
+			if (!string.IsNullOrEmpty (record.InjectCode)) 
 			{
 				writer.WriteLine ();
-				writer.WriteLine (parseInfo.InjectCode);
+				writer.WriteLineIgnoringIndent (record.InjectCode);
 			}
 		}
 
-		static string GetTypeName (ClassItem item)
+		static string GetTypeName (ItemInfo item, bool isArg)
 		{
-			if (item.IsCollection)
-				return $"ImmutableList<{MakeFriendlyTypeName (item.TypeName)}>";
+			if (item.IsCollection) 
+			{
+				string arrayType = isArg ? "IEnumerable" : "ImmutableArray";
+				return $"{arrayType}<{MakeFriendlyTypeName (item.TypeName)}>";
+			}
 			return MakeFriendlyTypeName (item.TypeName);
 		}
 

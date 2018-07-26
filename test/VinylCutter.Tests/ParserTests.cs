@@ -7,65 +7,71 @@ namespace VinylCutter.Tests
 	[TestFixture]
 	public class ParserTests
 	{
+		FileInfo Parse (string text)
+		{
+			Parser parser = new Parser (text);
+			return parser.Parse ();
+		}
+		
 		[Test]
 		[TestCase ("public class SimpleClass { }", "SimpleClass", true)]
 		[TestCase ("public struct SimpleStruct { }", "SimpleStruct", false)]
 		public void SimpleReflectedInfo (string text, string name, bool isClass)
 		{
-			Parser parser = new Parser (text);
-			var info = parser.Parse ();
-			Assert.AreEqual (1, info.Count);
-			Assert.AreEqual (name, info [0].Name);
-			Assert.AreEqual (isClass, info [0].IsClass);
-			Assert.IsFalse (info [0].IncludeWith);
-			Assert.AreEqual ("", info[0].BaseTypes);
+			FileInfo file = Parse (text);
+			Assert.AreEqual (1, file.Records.Length);
+			Assert.AreEqual (name, file.Records[0].Name);
+			Assert.AreEqual (isClass, file.Records[0].IsClass);
+			Assert.IsFalse (file.Records[0].IncludeWith);
+			Assert.AreEqual ("", file.Records[0].BaseTypes);
+			Assert.AreEqual ("", file.InjectCode);
+			Assert.AreEqual ("", file.GlobalNamespace);
 		}
 
 		[Test]
 		public void PropertiesAreTracked ()
 		{
-			Parser parser = new Parser ("public class SimpleClass { int X { get; } }");
-			var info = parser.Parse ();
-			Assert.AreEqual (1, info [0].Items.Length);
-			Assert.AreEqual ("X", info [0].Items [0].Name);
-			Assert.AreEqual ("Int32", info [0].Items [0].TypeName);
-			Assert.IsFalse (info [0].Items [0].IsCollection);
-			Assert.IsFalse (info [0].Items [0].IncludeWith);
+			FileInfo file = Parse ("public class SimpleClass { int X { get; } }");
+			Assert.AreEqual (1, file.Records[0].Items.Length);
+			Assert.AreEqual ("X", file.Records[0].Items[0].Name);
+			Assert.AreEqual ("Int32", file.Records[0].Items[0].TypeName);
+			Assert.IsFalse (file.Records[0].Items[0].IsCollection);
+			Assert.IsFalse (file.Records[0].Items[0].IncludeWith);
 		}
 
 		[Test]
 		public void VariablesAreTracked ()
 		{
-			Parser parser = new Parser ("public class SimpleClass { double Y; }");
-			var info = parser.Parse ();
-			Assert.AreEqual (1, info [0].Items.Length);
-			Assert.AreEqual ("Y", info [0].Items [0].Name);
-			Assert.AreEqual ("Double", info [0].Items [0].TypeName);
-			Assert.IsFalse (info [0].Items [0].IsCollection);
-			Assert.IsFalse (info [0].Items [0].IncludeWith);
+			FileInfo file = Parse ("public class SimpleClass { double Y; }");
+
+			Assert.AreEqual (1, file.Records[0].Items.Length);
+			Assert.AreEqual ("Y", file.Records[0].Items [0].Name);
+			Assert.AreEqual ("Double", file.Records[0].Items [0].TypeName);
+			Assert.IsFalse (file.Records[0].Items [0].IsCollection);
+			Assert.IsFalse (file.Records[0].Items [0].IncludeWith);
 		}
 
 		[Test]
 		public void IEnumerables ()
 		{
-			Parser parser = new Parser ("public class SimpleClass { List<int> Z; }");
-			var info = parser.Parse ();
-			Assert.AreEqual (1, info [0].Items.Length);
-			Assert.AreEqual ("Z", info [0].Items [0].Name);
-			Assert.IsTrue(info [0].Items [0].IsCollection);
-			Assert.AreEqual ("Int32", info [0].Items [0].TypeName);
+			FileInfo file = Parse ("public class SimpleClass { List<int> Z; }");
+
+			Assert.AreEqual (1, file.Records[0].Items.Length);
+			Assert.AreEqual ("Z", file.Records[0].Items [0].Name);
+			Assert.IsTrue(file.Records[0].Items [0].IsCollection);
+			Assert.AreEqual ("Int32", file.Records[0].Items [0].TypeName);
 		}
 
 		[Test]
 		public void OtherRecordTypes ()
 		{
-			Parser parser = new Parser (@"
+			FileInfo file = Parse (@"
 public class Element { int X; }
 public class Container { List <Element> E; }
 ");
-			var info = parser.Parse ();
-			Assert.AreEqual (1, info [0].Items.Length);
-			var container = info.First (x => x.Name == "Container");
+
+			Assert.AreEqual (1, file.Records[0].Items.Length);
+			var container = file.Records.First (x => x.Name == "Container");
 			Assert.AreEqual ("E", container.Items [0].Name);
 			Assert.AreEqual ("Element", container.Items [0].TypeName);
 			Assert.IsTrue (container.Items [0].IsCollection);
@@ -74,31 +80,31 @@ public class Container { List <Element> E; }
 		[Test]
 		public void ClassWithAttributes ()
 		{
-			Parser parser = new Parser (@"
+			FileInfo file = Parse (@"
 [With]
 public class SimpleClass { int X; }
 ");
-			var info = parser.Parse ();
-			Assert.IsTrue (info [0].IncludeWith);
-			Assert.IsFalse (info [0].Items[0].IncludeWith);
+
+			Assert.IsTrue (file.Records[0].IncludeWith);
+			Assert.IsFalse (file.Records[0].Items[0].IncludeWith);
 
 		}
 
 		[Test]
 		public void ItemSpecificWithAttributes ()
 		{
-			Parser parser = new Parser (@"
+			FileInfo file = Parse (@"
 public class SimpleClass { [With] int X; }
 ");
-			var info = parser.Parse ();
-			Assert.IsFalse (info [0].IncludeWith);
-			Assert.IsTrue (info [0].Items[0].IncludeWith);
+
+			Assert.IsFalse (file.Records[0].IncludeWith);
+			Assert.IsTrue (file.Records[0].Items[0].IncludeWith);
 		}
 		
 		[Test]
 		public void Visibilities ()
 		{
-			Func <string, Visibility> parseVisibility = s => (new Parser (s)).Parse()[0].Visibility;
+			Func <string, Visibility> parseVisibility = s => (Parse(s).Records[0].Visibility);
 
 			Assert.AreEqual (Visibility.Public, parseVisibility ("public class SimpleClass {}"));
 			Assert.AreEqual (Visibility.Private, parseVisibility ("class SimpleClass {}"));
@@ -107,22 +113,22 @@ public class SimpleClass { [With] int X; }
 		[Test]
 		public void Skip ()
 		{
-			Parser parser = new Parser (@"
+			FileInfo file = Parse (@"
 public class SimpleClass { int X; }
 [Skip]
 public class SkippedSimpleClass { int X; }
 [Skip]
 public interface SkippedInterface { int X { get; } }
 ");
-			var info = parser.Parse ();
-			Assert.AreEqual (1, info.Count ());
-			Assert.AreEqual ("SimpleClass", info [0].Name);
+
+			Assert.AreEqual (1, file.Records.Length);
+			Assert.AreEqual ("SimpleClass", file.Records[0].Name);
 		}
 
 		[Test]
 		public void SkipEnums ()
 		{
-			Parser parser = new Parser (@"
+			FileInfo file = Parse (@"
 public enum ParsingConfidence
 {
 	High,
@@ -131,14 +137,13 @@ public enum ParsingConfidence
 	Invalid,
 }
 ");
-			var info = parser.Parse ();
-			Assert.AreEqual (0, info.Count ());
+			Assert.AreEqual (0, file.Records.Length);
 		}
 
 		[Test]
 		public void Inject ()
 		{
-			Parser parser = new Parser (@"public class SimpleClass 
+			FileInfo file = Parse (@"public class SimpleClass 
 {
 	int X; 
 	int Y; 
@@ -147,65 +152,124 @@ public enum ParsingConfidence
 	int Size => X * Y;
 }
 ");
-			var info = parser.Parse ();
-			Assert.AreEqual ("\tint Size => X * Y;", info[0].InjectCode);
-			Assert.AreEqual (2, info[0].Items.Length);
+			Assert.AreEqual ("\tint Size => X * Y;", file.Records[0].InjectCode);
+			Assert.AreEqual (2, file.Records[0].Items.Length);
+		}
 
+		[Test]
+		public void InjectTopLevelItems ()
+		{
+			FileInfo file = Parse (@"[Inject]
+public enum Visibility { Public, Private }
+
+public class SimpleClass
+{
+	Visibility Status;
+	int Size;
+
+	[Inject]
+	bool Show => Status == Visibility.Public;
+}
+");
+			Assert.AreEqual ("public enum Visibility { Public, Private }", file.InjectCode);
+			Assert.AreEqual (1, file.Records.Length);
+			Assert.AreEqual ("\tbool Show => Status == Visibility.Public;", file.Records[0].InjectCode);
+			Assert.AreEqual (2, file.Records[0].Items.Length);
+		}
+
+		[Test]
+		public void InjectTopLevelItemsWithNamespace ()
+		{
+			FileInfo file = Parse (@"namespace Test
+{
+	[Inject]
+	public enum Visibility { Public, Private }
+
+	public class SimpleClass
+	{
+		Visibility Status;
+		int Size;
+
+		[Inject]
+		bool Show => Status == Visibility.Public;
+	}
+}
+");
+			Assert.AreEqual ("Test", file.GlobalNamespace);
+			Assert.AreEqual ("\tpublic enum Visibility { Public, Private }", file.InjectCode);
+			Assert.AreEqual (1, file.Records.Length);
+			Assert.AreEqual ("\t\tbool Show => Status == Visibility.Public;", file.Records[0].InjectCode);
+			Assert.AreEqual (2, file.Records[0].Items.Length);
 		}
 
 		[Test]
 		public void Inherit ()
 		{
-			Parser parser = new Parser (@"public interface IFoo {} public class Foo {}
+			FileInfo file = Parse (@"public interface IFoo {} public class Foo {}
 public class SimpleClass : Foo, IFoo
 {
 	int X; 
 	int Y; 
 }
 ");
-			var info = parser.Parse ();
-			Assert.AreEqual ("Foo, IFoo", info.First (x => x.Name == "SimpleClass").BaseTypes);
+			Assert.AreEqual ("Foo, IFoo", file.Records.First (x => x.Name == "SimpleClass").BaseTypes);
 		}
 
 		[Test]
 		public void Default ()
 		{
-			Parser parser = new Parser (@"public class SimpleClass
+			FileInfo file = Parse (@"public class SimpleClass
 {
 	[Default (""0"")]
 	int X;
 	int Y; 
 }
 ");
-			var info = parser.Parse ();
-			Assert.AreEqual ("0", info[0].Items[0].DefaultValue);
-			Assert.AreEqual (null, info[0].Items[1].DefaultValue);
+			Assert.AreEqual ("0", file.Records[0].Items[0].DefaultValue);
+			Assert.AreEqual (null, file.Records[0].Items[1].DefaultValue);
 		}
 
 		[Test]
 		public void NullDefault ()
 		{
-			Parser parser = new Parser (@"public class SimpleClass
+			FileInfo file = Parse (@"public class SimpleClass
 {
 	[Default (""null"")]
 	string X;
 }
 ");
-			var info = parser.Parse ();
-			Assert.AreEqual ("null", info[0].Items[0].DefaultValue);
+			Assert.AreEqual ("null", file.Records[0].Items[0].DefaultValue);
 		}
 
 		[Test]
 		public void BoolDefault ()
 		{
-			Parser parser = new Parser (@"public class SimpleClass
+			FileInfo file = Parse (@"public class SimpleClass
 {
 	[Default (""false"")]
 	bool X;
 }
 ");
-			var info = parser.Parse ();
-			Assert.AreEqual ("false", info[0].Items[0].DefaultValue);
+			Assert.AreEqual ("false", file.Records[0].Items[0].DefaultValue);
+		}
+
+		[Test]
+		public void EmptyStringDefault ()
+		{
+			FileInfo file = Parse (@"public class SimpleClass
+{
+	[Default ("""")]
+	bool X;
+}
+");
+			Assert.AreEqual ("\"\"", file.Records[0].Items[0].DefaultValue);
+		}
+
+		[Test]
+		public void Namespace ()
+		{
+			FileInfo file = Parse (@"namespace Test { public class SimpleClass { } }");
+			Assert.AreEqual ("Test", file.GlobalNamespace);
 		}
 
 		[Test]

@@ -10,68 +10,83 @@ namespace VinylCutter.Tests
 		[Test]
 		public void SmokeTest ()
 		{
-			string testCode = @"public interface IPoint {}
-[With]
-public class Point : IPoint
+			string testCode = @"
+namespace Integration
 {
-	double X;
-	[Default (""42"")]
-	double Y;
-}
-
-public class PointList
-{
-	[With]
-	List<Point> Points;
-	string Name;
+	interface IPoint {}
 
 	[Inject]
-	int Length => Points.Count;
+	public enum Visibility { Public, Private }
+
+	[With]
+	public class Point : IPoint
+	{
+		double X;
+		[Default (""42"")]
+		double Y;
+	}
+
+	public class PointList
+	{
+		[With]
+		List<Point> Points;
+		string Name;
+
+		[Inject]
+		int Length => Points.Count;
+	}
 }
 ";
 			Parser parser = new Parser (testCode);
 			string output = new CodeGenerator (parser.Parse ()).Generate ();
-			Assert.AreEqual (@"using System.Collections.Immutable;
+			Assert.AreEqual (@"using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 
-public partial class Point : IPoint
+namespace Integration
 {
-	public double X { get; }
-	public double Y { get; }
+	public enum Visibility { Public, Private }
 
-	public Point (double x, double y = 42)
+	public partial class Point : IPoint
 	{
-		X = x;
-		Y = y;
+		public double X { get; }
+		public double Y { get; }
+
+		public Point (double x, double y = 42)
+		{
+			X = x;
+			Y = y;
+		}
+
+		public Point WithX (double x)
+		{
+			return new Point (x, Y);
+		}
+
+		public Point WithY (double y)
+		{
+			return new Point (X, y);
+		}
 	}
 
-	public Point WithX (double x)
+	public partial class PointList
 	{
-		return new Point (x, Y);
+		public ImmutableArray<Point> Points { get; }
+		public string Name { get; }
+
+		public PointList (IEnumerable<Point> points, string name)
+		{
+			Points = ImmutableArray.CreateRange (points ?? Array.Empty<Point> ());
+			Name = name;
+		}
+
+		public PointList WithPoints (IEnumerable<Point> points)
+		{
+			return new PointList (points, Name);
+		}
+
+		int Length => Points.Count;
 	}
-
-	public Point WithY (double y)
-	{
-		return new Point (X, y);
-	}
-}
-
-public partial class PointList
-{
-	public ImmutableList<Point> Points { get; }
-	public string Name { get; }
-
-	public PointList (ImmutableList<Point> points, string name)
-	{
-		Points = points;
-		Name = name;
-	}
-
-	public PointList WithPoints (ImmutableList<Point> points)
-	{
-		return new PointList (points, Name);
-	}
-
-	int Length => Points.Count;
 }
 ", output);
 		}

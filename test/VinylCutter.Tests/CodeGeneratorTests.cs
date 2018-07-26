@@ -7,41 +7,51 @@ namespace VinylCutter.Tests
 	[TestFixture]
 	public class CodeGeneratorTests
 	{
+		string Generate (RecordInfo record, string injectCode = "", string globalNamespace = "") => Generate (record.Yield (), injectCode, globalNamespace);
+
+		string Generate (IEnumerable<RecordInfo> records, string injectCode = "", string globalNamespace = "")
+		{
+			FileInfo file = new FileInfo (records, injectCode: injectCode, globalNamespace: globalNamespace);
+			CodeGenerator generator = new CodeGenerator (file);
+			return generator.Generate ();
+		}
+				
 		[Test]
 		[TestCase ("SimpleClass", Visibility.Public, true, "public partial class SimpleClass\n{\n}\n")]
 		[TestCase ("SimpleClass", Visibility.Private, true, "partial class SimpleClass\n{\n}\n")]
 		[TestCase ("SimpleStruct", Visibility.Public, false, "public partial struct SimpleStruct\n{\n}\n")]
 		public void GenerateSimpleClass (string name, Visibility visibility, bool isClass, string expected)
 		{
-			ParseInfo parseInfo = new ParseInfo (name, isClass, visibility); 
-			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
-			Assert.AreEqual (expected, generator.Generate ());
+			RecordInfo record = new RecordInfo (name, isClass, visibility);
+			Assert.AreEqual (expected, Generate (record));
 		}
 		
 		[Test]
 		public void SpacesBetweenRecords ()
 		{
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public); 
-			ParseInfo parseInfo2 = new ParseInfo ("SimpleClass2", true, Visibility.Public); 
-			CodeGenerator generator = new CodeGenerator (new ParseInfo [] { parseInfo, parseInfo2 });
-			Assert.AreEqual (@"public partial class SimpleClass
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public); 
+			RecordInfo record2 = new RecordInfo ("SimpleClass2", true, Visibility.Public);
+
+			string expected = @"public partial class SimpleClass
 {
 }
 
 public partial class SimpleClass2
 {
 }
-", generator.Generate ());
+";
+
+			Assert.AreEqual (expected, Generate (new RecordInfo[] { record, record2 }));
 		}
 
 		[Test]
 		public void GenerateBasicProperties ()
 		{
-			ClassItem item = new ClassItem ("Foo", "Int32");  
-			ClassItem item2 = new ClassItem ("Bar", "Int32");  
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, new ClassItem [] { item, item2 }); 
-			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
-			Assert.AreEqual (@"public partial class SimpleClass
+			ItemInfo item = new ItemInfo ("Foo", "Int32");  
+			ItemInfo item2 = new ItemInfo ("Bar", "Int32");  
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false, new ItemInfo [] { item, item2 }); 
+
+			string expected = @"public partial class SimpleClass
 {
 	public int Foo { get; }
 	public int Bar { get; }
@@ -52,42 +62,49 @@ public partial class SimpleClass2
 		Bar = bar;
 	}
 }
-", generator.Generate ());
+";
+			Assert.AreEqual (expected, Generate (record));
+
 		}
 
 		[Test]
 		public void Enumerables ()
 		{
-			ClassItem item = new ClassItem ("Foo", "Int32", true, false);  
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ()); 
-			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
-			Assert.AreEqual (@"using System.Collections.Immutable;
+			ItemInfo item = new ItemInfo ("Foo", "Int32", true, false);  
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ()); 
+
+			string expected = @"using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 
 public partial class SimpleClass
 {
-	public ImmutableList<int> Foo { get; }
+	public ImmutableArray<int> Foo { get; }
 
-	public SimpleClass (ImmutableList<int> foo)
+	public SimpleClass (IEnumerable<int> foo)
 	{
-		Foo = foo;
+		Foo = ImmutableArray.CreateRange (foo ?? Array.Empty<int> ());
 	}
 
-	public SimpleClass WithFoo (ImmutableList<int> foo)
+	public SimpleClass WithFoo (IEnumerable<int> foo)
 	{
 		return new SimpleClass (foo);
 	}
 }
-", generator.Generate ());
+";
+			Assert.AreEqual (expected, Generate (record));
 		}
 		
 		[Test]
 		public void OtherRecordTypes ()
 		{
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public); 
-			ClassItem item = new ClassItem ("Items", "SimpleClass", true, false);  
-			ParseInfo parseInfo2 = new ParseInfo ("Container", true, Visibility.Public, true, item.Yield ()); 
-			CodeGenerator generator = new CodeGenerator (new ParseInfo [] { parseInfo, parseInfo2 });
-			Assert.AreEqual (@"using System.Collections.Immutable;
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public); 
+			ItemInfo item = new ItemInfo ("Items", "SimpleClass", true, false);  
+			RecordInfo record2 = new RecordInfo ("Container", true, Visibility.Public, true, item.Yield ()); 
+
+			string expected = @"using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 
 public partial class SimpleClass
 {
@@ -95,29 +112,31 @@ public partial class SimpleClass
 
 public partial class Container
 {
-	public ImmutableList<SimpleClass> Items { get; }
+	public ImmutableArray<SimpleClass> Items { get; }
 
-	public Container (ImmutableList<SimpleClass> items)
+	public Container (IEnumerable<SimpleClass> items)
 	{
-		Items = items;
+		Items = ImmutableArray.CreateRange (items ?? Array.Empty<SimpleClass> ());
 	}
 
-	public Container WithItems (ImmutableList<SimpleClass> items)
+	public Container WithItems (IEnumerable<SimpleClass> items)
 	{
 		return new Container (items);
 	}
 }
-", generator.Generate ());
+";
+
+			Assert.AreEqual (expected, Generate (new RecordInfo[] { record, record2 }));
 		}
 		
 		[Test]
 		public void With ()
 		{
-			ClassItem item = new ClassItem ("Foo", "Int32");  
-			ClassItem item2 = new ClassItem ("Bar", "Int32");  
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, true, new ClassItem [] { item, item2 }); 
-			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
-			Assert.AreEqual (@"public partial class SimpleClass
+			ItemInfo item = new ItemInfo ("Foo", "Int32");  
+			ItemInfo item2 = new ItemInfo ("Bar", "Int32");  
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, new ItemInfo [] { item, item2 });
+
+			string expected = @"public partial class SimpleClass
 {
 	public int Foo { get; }
 	public int Bar { get; }
@@ -138,17 +157,19 @@ public partial class Container
 		return new SimpleClass (Foo, bar);
 	}
 }
-", generator.Generate ());
+";
+			
+			Assert.AreEqual (expected, Generate (record));
 		}
 		
 		[Test]
 		public void WithOnSingleProperty ()
 		{
-			ClassItem item = new ClassItem ("Foo", "Int32", false, true);  
-			ClassItem item2 = new ClassItem ("Bar", "Int32");
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, new ClassItem [] { item, item2 }); 
-			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
-			Assert.AreEqual (@"public partial class SimpleClass
+			ItemInfo item = new ItemInfo ("Foo", "Int32", false, true);  
+			ItemInfo item2 = new ItemInfo ("Bar", "Int32");
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false, new ItemInfo [] { item, item2 });
+
+			string expected = @"public partial class SimpleClass
 {
 	public int Foo { get; }
 	public int Bar { get; }
@@ -164,17 +185,19 @@ public partial class Container
 		return new SimpleClass (foo, Bar);
 	}
 }
-", generator.Generate ());
+";
+
+			Assert.AreEqual (expected, Generate (record));
 		}
 
 		[Test]
 		public void Injection ()
 		{
-			ClassItem item = new ClassItem ("X", "Int32");
-			ClassItem item2 = new ClassItem ("Y", "Int32");
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, new ClassItem[] { item, item2 }, injectCode: "	int Size => X * Y;");
-			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
-			Assert.AreEqual (@"public partial class SimpleClass
+			ItemInfo item = new ItemInfo ("X", "Int32");
+			ItemInfo item2 = new ItemInfo ("Y", "Int32");
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false, new ItemInfo[] { item, item2 }, injectCode: "	int Size => X * Y;");
+
+			string expected = @"public partial class SimpleClass
 {
 	public int X { get; }
 	public int Y { get; }
@@ -187,16 +210,45 @@ public partial class Container
 
 	int Size => X * Y;
 }
-", generator.Generate ());
+";
+
+			Assert.AreEqual (expected, Generate (record));
+		}
+
+		[Test]
+		public void TopLevelInjection ()
+		{
+			ItemInfo item = new ItemInfo ("X", "Int32");
+			ItemInfo item2 = new ItemInfo ("Y", "Int32");
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false, new ItemInfo[] { item, item2 });
+
+			string expected = @"namespace Test
+{
+	public enum Visibility { Public, Private }
+
+	public partial class SimpleClass
+	{
+		public int X { get; }
+		public int Y { get; }
+
+		public SimpleClass (int x, int y)
+		{
+			X = x;
+			Y = y;
+		}
+	}
+}
+";
+			Assert.AreEqual (expected, Generate (record, injectCode : "\tpublic enum Visibility { Public, Private }", globalNamespace : "Test"));
 		}
 
 		[Test]
 		public void Inherit ()
 		{
-			ClassItem item = new ClassItem ("X", "Int32");
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, item.Yield (), baseTypes: "IFoo");
-			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
-			Assert.AreEqual (@"public partial class SimpleClass : IFoo
+			ItemInfo item = new ItemInfo ("X", "Int32");
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false, item.Yield (), baseTypes: "IFoo");
+
+			string expected = @"public partial class SimpleClass : IFoo
 {
 	public int X { get; }
 
@@ -205,16 +257,18 @@ public partial class Container
 		X = x;
 	}
 }
-", generator.Generate ());
+";
+
+			Assert.AreEqual (expected, Generate (record));
 		}
 
 		[Test]
 		public void Default ()
 		{
-			ClassItem item = new ClassItem ("X", "Int32", defaultValue: "42");
-			ParseInfo parseInfo = new ParseInfo ("SimpleClass", true, Visibility.Public, false, item.Yield ());
-			CodeGenerator generator = new CodeGenerator (parseInfo.Yield ());
-			Assert.AreEqual (@"public partial class SimpleClass
+			ItemInfo item = new ItemInfo ("X", "Int32", defaultValue: "42");
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false, item.Yield ());
+
+			string expected = @"public partial class SimpleClass
 {
 	public int X { get; }
 
@@ -223,8 +277,32 @@ public partial class Container
 		X = x;
 	}
 }
-", generator.Generate ());
+";
+
+			Assert.AreEqual (expected, Generate (record));
 		}
 
+		[Test]
+		public void Namespace ()
+		{
+			ItemInfo item = new ItemInfo ("X", "Int32", defaultValue: "42");
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false, item.Yield ());
+
+			string expected = @"namespace Test
+{
+	public partial class SimpleClass
+	{
+		public int X { get; }
+
+		public SimpleClass (int x = 42)
+		{
+			X = x;
+		}
+	}
+}
+";
+
+			Assert.AreEqual (expected, Generate (record, globalNamespace : "Test"));
+		}
 	}
 }

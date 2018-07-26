@@ -24,10 +24,20 @@ namespace VinylCutter
 			Write (s + "\n");
 		}
 
+		public void WriteLineIgnoringIndent (string s)
+		{
+			WriteWithIndent (s + "\n", 0);
+		}
+
 		public void Write (string s)
 		{
-			Output.Append ('\t', IndentLevel);
-			Output.Append (s);
+			WriteWithIndent (s, IndentLevel);
+		}
+
+		void WriteWithIndent (string s, int indent)
+		{
+			Output.Append ('\t', indent);
+			Output.Append(s);
 		}
 
 		public string Generate ()

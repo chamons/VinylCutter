@@ -8,6 +8,10 @@ BRITTLE_BUILD = mono /Library/Frameworks/Mono.framework/Versions/5.10.1/lib/mono
 
 all:: build
 
+# To prevent bootstrapping issues we check in src/VinylCutter/ParserRecords.g.cs
+regenerate:: dist
+	$(Q) ./dist/VinylCutter src/VinylCutter/ParserRecords.rcs --output src/VinylCutter/
+
 dist:: build-release
 	$(Q) rm -fr ./dist/
 	$(Q) mkdir -p dist/bin

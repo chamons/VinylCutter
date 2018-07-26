@@ -121,9 +121,11 @@
     <Compile Include="StringExtensions.cs" />
     <Compile Include="TempDirectory.cs" />
     <Compile Include="VinylCutterTool.cs" />
+    <Compile Include="ParserRecords.g.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="ParserRecords.rcs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
