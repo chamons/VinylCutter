@@ -99,7 +99,7 @@ namespace Test
 	{
 		public static void Main ()
 		{
-            var list = new NamedPointList (new Point [] { new Point (1, 1), new Point (2, 2) }, "MyList");
+			var list = new NamedPointList (new Point [] { new Point (1, 1), new Point (2, 2) }, "MyList");
 			Console.WriteLine ($"List {list.Name} has points of size ({string.Join (", ", list.Points.Select (p => p.Size))})!");
 		}
 	}
