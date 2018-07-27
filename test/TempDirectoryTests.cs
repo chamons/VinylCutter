@@ -1,30 +1,30 @@
 using System;
 using System.IO;
-using NUnit.Framework;
+using Xunit;
 
 namespace VinylCutter.Tests
 {
-	[TestFixture]
+	[Collection("Uses TempDirectory")]
 	public class TempDirectoryTests
 	{
-		[Test]
+		[Fact]
 		public void CreateExpectedDirectory ()
 		{
 			using (TempDirectory dir = new TempDirectory ())
-				Assert.IsTrue (Directory.Exists (dir.Path));
+				Assert.True (Directory.Exists (dir.Path));
 		}
 		
-		[Test]
+		[Fact]
 		public void DirectoryRemovedOnDispose ()
 		{
 			string createdPath = null;
 			using (TempDirectory dir = new TempDirectory ())
 				createdPath = dir.Path;
 			
-			Assert.IsFalse (Directory.Exists (createdPath));
+			Assert.False (Directory.Exists (createdPath));
 		}
 
-		[Test]
+		[Fact]
 		public void MultipleNestedDoNotStomp ()
 		{
 			using (TempDirectory first = new TempDirectory ())
@@ -35,7 +35,7 @@ namespace VinylCutter.Tests
 				{
 					File.WriteAllText (Path.Combine (second.Path, "second"), "second");
 				}
-				Assert.IsTrue (File.Exists (firstPath));
+				Assert.True (File.Exists (firstPath));
 			}
 		}
 

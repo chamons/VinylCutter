@@ -43,6 +43,11 @@ namespace VinylCutter
 				Console.Error.WriteLine ($"Unable to open file {e.FileName}");
 				return -1;
 			}
+			catch (DirectoryNotFoundException e)
+			{
+				Console.Error.WriteLine ($"Unable to open directory: {e.Message}");
+				return -1;
+			}
 			catch (ParseCompileError e)
 			{
 				Console.Error.WriteLine ($"Compile error while processing record definition: {e.ErrorText}");

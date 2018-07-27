@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 
 namespace VinylCutter.Tests
 {
-	[TestFixture]
+	[Collection("Uses TempDirectory")]
 	public class VinylCutterToolTests
 	{
-		[Test]
+		[Fact]
 		public void NoInputFailsValidation ()
 		{
 			VinylCutterTool tool = new VinylCutterTool ();
@@ -20,7 +20,7 @@ namespace VinylCutter.Tests
 			Assert.True (tool.ValidateOptions (new List<string> ()));
 		}
 		
-		[Test]
+		[Fact]
 		public void FilesOutputToDirectoryWithCorrectExtension ()
 		{
 			using (TempDirectory temp = new TempDirectory ())
@@ -34,9 +34,9 @@ namespace VinylCutter.Tests
 					OutputDirectory = temp.Path,
 					FileExtension = "bar"
 				};
-				Assert.IsTrue (tool.ValidateOptions (new List<string> () { inputPath }));
+				Assert.True (tool.ValidateOptions (new List<string> () { inputPath }));
 				tool.Run ();
-				Assert.IsTrue (File.Exists (expectedOutputPath));
+				Assert.True (File.Exists (expectedOutputPath));
 			}
 		}
 	}

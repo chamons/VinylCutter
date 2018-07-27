@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 
 namespace VinylCutter.Tests
 {
-	[TestFixture]
 	public class CodeGeneratorTests
 	{
 		string Generate (RecordInfo record, string injectCode = "", string globalNamespace = "") => Generate (record.Yield (), injectCode, globalNamespace);
@@ -16,17 +15,17 @@ namespace VinylCutter.Tests
 			return generator.Generate ();
 		}
 				
-		[Test]
-		[TestCase ("SimpleClass", Visibility.Public, true, "public partial class SimpleClass\n{\n}\n")]
-		[TestCase ("SimpleClass", Visibility.Private, true, "partial class SimpleClass\n{\n}\n")]
-		[TestCase ("SimpleStruct", Visibility.Public, false, "public partial struct SimpleStruct\n{\n}\n")]
+		[Theory]
+		[InlineData ("SimpleClass", Visibility.Public, true, "public partial class SimpleClass\n{\n}\n")]
+		[InlineData ("SimpleClass", Visibility.Private, true, "partial class SimpleClass\n{\n}\n")]
+		[InlineData ("SimpleStruct", Visibility.Public, false, "public partial struct SimpleStruct\n{\n}\n")]
 		public void GenerateSimpleClass (string name, Visibility visibility, bool isClass, string expected)
 		{
 			RecordInfo record = new RecordInfo (name, isClass, visibility);
-			Assert.AreEqual (expected, Generate (record));
+			Assert.Equal (expected, Generate (record));
 		}
 		
-		[Test]
+		[Fact]
 		public void SpacesBetweenRecords ()
 		{
 			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public); 
@@ -41,10 +40,10 @@ public partial class SimpleClass2
 }
 ";
 
-			Assert.AreEqual (expected, Generate (new RecordInfo[] { record, record2 }));
+			Assert.Equal (expected, Generate (new RecordInfo[] { record, record2 }));
 		}
 
-		[Test]
+		[Fact]
 		public void GenerateBasicProperties ()
 		{
 			ItemInfo item = new ItemInfo ("Foo", "Int32");  
@@ -63,11 +62,11 @@ public partial class SimpleClass2
 	}
 }
 ";
-			Assert.AreEqual (expected, Generate (record));
+			Assert.Equal (expected, Generate (record));
 
 		}
 
-		[Test]
+		[Fact]
 		public void Enumerables ()
 		{
 			ItemInfo item = new ItemInfo ("Foo", "Int32", true, false);  
@@ -92,10 +91,10 @@ public partial class SimpleClass
 	}
 }
 ";
-			Assert.AreEqual (expected, Generate (record));
+			Assert.Equal (expected, Generate (record));
 		}
 		
-		[Test]
+		[Fact]
 		public void OtherRecordTypes ()
 		{
 			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public); 
@@ -126,10 +125,10 @@ public partial class Container
 }
 ";
 
-			Assert.AreEqual (expected, Generate (new RecordInfo[] { record, record2 }));
+			Assert.Equal (expected, Generate (new RecordInfo[] { record, record2 }));
 		}
 		
-		[Test]
+		[Fact]
 		public void With ()
 		{
 			ItemInfo item = new ItemInfo ("Foo", "Int32");  
@@ -159,10 +158,10 @@ public partial class Container
 }
 ";
 			
-			Assert.AreEqual (expected, Generate (record));
+			Assert.Equal (expected, Generate (record));
 		}
 		
-		[Test]
+		[Fact]
 		public void WithOnSingleProperty ()
 		{
 			ItemInfo item = new ItemInfo ("Foo", "Int32", false, true);  
@@ -187,10 +186,10 @@ public partial class Container
 }
 ";
 
-			Assert.AreEqual (expected, Generate (record));
+			Assert.Equal (expected, Generate (record));
 		}
 
-		[Test]
+		[Fact]
 		public void Injection ()
 		{
 			ItemInfo item = new ItemInfo ("X", "Int32");
@@ -212,10 +211,10 @@ public partial class Container
 }
 ";
 
-			Assert.AreEqual (expected, Generate (record));
+			Assert.Equal (expected, Generate (record));
 		}
 
-		[Test]
+		[Fact]
 		public void TopLevelInjection ()
 		{
 			ItemInfo item = new ItemInfo ("X", "Int32");
@@ -239,10 +238,10 @@ public partial class Container
 	}
 }
 ";
-			Assert.AreEqual (expected, Generate (record, injectCode : "\tpublic enum Visibility { Public, Private }", globalNamespace : "Test"));
+			Assert.Equal (expected, Generate (record, injectCode : "\tpublic enum Visibility { Public, Private }", globalNamespace : "Test"));
 		}
 
-		[Test]
+		[Fact]
 		public void Inherit ()
 		{
 			ItemInfo item = new ItemInfo ("X", "Int32");
@@ -259,10 +258,10 @@ public partial class Container
 }
 ";
 
-			Assert.AreEqual (expected, Generate (record));
+			Assert.Equal (expected, Generate (record));
 		}
 
-		[Test]
+		[Fact]
 		public void Default ()
 		{
 			ItemInfo item = new ItemInfo ("X", "Int32", defaultValue: "42");
@@ -279,10 +278,10 @@ public partial class Container
 }
 ";
 
-			Assert.AreEqual (expected, Generate (record));
+			Assert.Equal (expected, Generate (record));
 		}
 
-		[Test]
+		[Fact]
 		public void Namespace ()
 		{
 			ItemInfo item = new ItemInfo ("X", "Int32", defaultValue: "42");
@@ -302,7 +301,7 @@ public partial class Container
 }
 ";
 
-			Assert.AreEqual (expected, Generate (record, globalNamespace : "Test"));
+			Assert.Equal (expected, Generate (record, globalNamespace : "Test"));
 		}
 	}
 }

@@ -1,32 +1,31 @@
 using System;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 
 namespace VinylCutter.Tests
 {
-	[TestFixture]
 	public class CodeWriterTests
 	{
-		[Test]
+		[Fact]
 		public void IndentTabsOutputOver ()
 		{
 			CodeWriter writer = new CodeWriter ();
 			writer.WriteLine ("asdf");
 			writer.Indent ();
 			writer.WriteLine ("fdsa");
-			Assert.AreEqual ("asdf\n\tfdsa\n", writer.Generate ());
+			Assert.Equal ("asdf\n\tfdsa\n", writer.Generate ());
 		}
 
-		[Test]
+		[Fact]
 		public void WriteLineAddsNewLineWriteDoesNot ()
 		{
 			CodeWriter writer = new CodeWriter ();
 			writer.WriteLine ("asdf");
 			writer.Write ("fdsa");
-			Assert.AreEqual ("asdf\nfdsa", writer.Generate ());
+			Assert.Equal ("asdf\nfdsa", writer.Generate ());
 		}
 		
-		[Test]
+		[Fact]
 		public void OverDeindentingThrows ()
 		{
 			CodeWriter writer = new CodeWriter ();
@@ -35,13 +34,13 @@ namespace VinylCutter.Tests
 			Assert.Throws<InvalidOperationException> (() => writer.Dedent ());
 		}
 		
-		[Test]
+		[Fact]
 		public void EmptyLineDoesNotInheritIndent ()
 		{
 			CodeWriter writer = new CodeWriter ();
 			writer.Indent ();
 			writer.WriteLine ();
-			Assert.AreEqual ("\n", writer.Generate ());
+			Assert.Equal ("\n", writer.Generate ());
 		}
 
 	}

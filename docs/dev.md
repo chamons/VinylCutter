@@ -64,6 +64,6 @@ I've developed a few special makefile targets and bit of vim script that may be 
 
 `nnoremap <leader>r :w<cr>:let $TEST_FILES=expand('%')<cr>:!make test-fast<cr>` - This builds the current file as a nunit test and runs just the tests inside.
 
-`nnoremap <leader>a :w<cr>:!make test-fast<cr>` - This runs all nunit tests without invoking msbuild (2x faster on average).
+`nnoremap <leader>a :w<cr>:!make test<cr>` - This runs all unit tests
 
 `nnoremap <leader>b :w<cr>:!make<cr>` - This runs a full build, useful to check for syntax errors.

@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 
 namespace VinylCutter.Tests
 {
-	[TestFixture]
 	public class IntegrationTests
 	{
-		[Test]
+		[Fact]
 		public void SmokeTest ()
 		{
 			string testCode = @"
@@ -39,7 +38,7 @@ namespace Integration
 ";
 			Parser parser = new Parser (testCode);
 			string output = new CodeGenerator (parser.Parse ()).Generate ();
-			Assert.AreEqual (@"using System;
+			Assert.Equal (@"using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
