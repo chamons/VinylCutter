@@ -1,11 +1,12 @@
 ## Quickstart
 
-Until nuget support is complete, the first step is obtaining and building VinyCutter:
+### Install 
 
-- `git clone git@github.com:chamons/VinylCutter.git && cd VinylCutter`
-- `make prepare && make dist`
+`dotnet tool install --global VinylCutter`
 
-Next let's start with a point and named list of points:
+### Tutorial
+
+Let's start with a point and named list of points:
 
 ```csharp
 namespace Model
@@ -26,7 +27,7 @@ namespace Model
 
 And see what that generated to:
 
-`$ ./dist/VinylCutter --stdout point.rcs`
+`$ dotnet records --stdout point.rcs`
 
 ```csharp
 using System;
@@ -86,7 +87,7 @@ public class Point
 
 Now we'll need to:
 
-- Regenerate the output: `./dist/VinylCutter point.rcs`
+- Regenerate the output: `dotnet records point.rcs`
 - Create a small test program:
 
 ```csharp

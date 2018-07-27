@@ -40,13 +40,15 @@ There is a [proposal](https://github.com/dotnet/csharplang/blob/master/proposals
 
 ## Usage
 
-Until nuget support [is added](https://github.com/chamons/VinylCutter/issues/21) users will need to build VinylCutter to try it out.
+VinylCutter can be installed as a global .NET Core tool with the following command:
 
-This generally entails a simple `make prepare && make dist` but see the [Development](docs/dev.md) guide for more details.
+`dotnet tool install --global VinylCutter`
+
+which can be run with:
+
+`dotnet records`.
 
 A number of common use cases are covered in the [Quickstart](docs/quickstart.md).
-
-VinylCutter is currently packaged as a command line tool until [MSBuild support](https://github.com/chamons/VinylCutter/issues/20) is complete.
 
 ```Usage: VinylCutter.exe [OPTIONS]+ [FILES]+
 Generate C# code from record definitions.

@@ -1,6 +1,10 @@
 ## Developer Notes
 
-VinylCutter is a .NET console application written in C# which converts C# definitions to C# generated code. It is powered by [roslyn](https://github.com/dotnet/roslyn) under the hood.
+VinylCutter is a .NET console application written in C# which converts C# definitions to C# generated code
+
+It is packaged as a .NET Core global tool, which allows it to be installed via nuget.
+
+It is powered by [roslyn](https://github.com/dotnet/roslyn) under the hood.
 
 ## Building
 
@@ -8,17 +12,16 @@ VinyCutter can be built and run from either the command line or Visual Studio fo
 
 ### Command Line
 
-- `make prepare` - Fetch dependencies from nuget. A bit slow, it only needs to be done on fresh syncs or when dependencies have been updated.
 - `make` - Build debug
-- `make test` - Run all nunit test
-- `make dist` - Generate a "bundle" for local use
+- `make test` - Run all xunit test
+- `make nuget` - Generate and install a nuget package
 
 
 ### Visual Studio for Mac
 
 - Open VinylCutter.sln and Build
 - Run tests from the the "Unit Tests" pad
-- `make dist` from the command line is needed currently to generate a distribution folder
+- `make nuget` from the command line is needed currently to generate and install a nuget.
 
 
 ## Archtecture
@@ -52,7 +55,7 @@ VinyCutter consumes its own output as both a time saver and a form of dogfood.
 
 To prevent bootstrapping issues, where you need the tool to build said tool, the output has been checked into version control.
 
-make regenerate will process src/VinylCutter/ParserRecords.rcs
+`make regenerate` will process src/VinylCutter/ParserRecords.rcs
 
 Both the definition and the output should be checked in for now.
 
@@ -62,8 +65,8 @@ The unit test workflow in Visual Studio for Mac is a bit rough, so I often run t
 
 I've developed a few special makefile targets and bit of vim script that may be useful:
 
-`nnoremap <leader>r :w<cr>:let $TEST_FILES=expand('%')<cr>:!make test-fast<cr>` - This builds the current file as a nunit test and runs just the tests inside.
+`nnoremap <leader>r :w<cr>:let $TEST_FILES=expand('%')<cr>:!make test-fast<cr>` - This builds tests and runs just the tests inside the current file.
 
-`nnoremap <leader>a :w<cr>:!make test<cr>` - This runs all unit tests
+`nnoremap <leader>a :w<cr>:!make test<cr>` - This runs all unit tests.
 
 `nnoremap <leader>b :w<cr>:!make<cr>` - This runs a full build, useful to check for syntax errors.
