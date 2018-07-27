@@ -53,19 +53,6 @@ install the [latest runtime](https://www.microsoft.com/net/learn/get-started-wit
 
 A number of common use cases are covered in the [Quickstart](docs/quickstart.md).
 
-```Usage: VinylCutter.exe [OPTIONS]+ [FILES]+
-Generate C# code from record definitions.
-
-Options:
-      --stdin                Read record definitions from stdin, not a file.
-      --stdout               Output record generated code to stdout, not a file.
-  -o, --output=VALUE         Directory to output file to. (Defaults to current
-                               directory)
-      --extension=VALUE      Suffix to append to each file name written to
-                               output directory. (Defaults to .g.cs)
-  -h, --help                 show this message and exit
-```
-
 One or more C# "definition" files are passed in to define the shape of the record class to generate. 
 
 Each record is based upon the name and namespace of each class defined, with read only properties matching every property or field declared. 
@@ -103,6 +90,21 @@ A number of [Attributes](docs/attributes.md), such as the `[With]` used above, c
 ### Generated Code Stability
 
 VinylCutter is still under active development and the generated code surface will likley evolve over time. In particular it likely will align closer to the [proposed generated code](https://github.com/chamons/VinylCutter/issues/27).
+
+### Command Line Arguments
+
+```Usage: VinylCutter.exe [OPTIONS]+ [FILES]+
+Generate C# code from record definitions.
+
+Options:
+      --stdin                Read record definitions from stdin, not a file.
+      --stdout               Output record generated code to stdout, not a file.
+  -o, --output=VALUE         Directory to output file to. (Defaults to current
+                               directory)
+      --extension=VALUE      Suffix to append to each file name written to
+                               output directory. (Defaults to .g.cs)
+  -h, --help                 show this message and exit
+```
 
 ## Development
 
