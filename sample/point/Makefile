@@ -1,3 +1,3 @@
 build::
-	dotnet run -p ../../src/VinylCutter.csproj point.rcs
+	dotnet records point.rcs
 	dotnet build

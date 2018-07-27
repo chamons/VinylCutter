@@ -9,6 +9,11 @@ regenerate::
 build::
 	$(Q) dotnet build -nologo /v:q
 
+nuget::
+	$(Q) - dotnet tool uninstall -g VinylCutter
+	$(Q) dotnet pack -c release -o ../nupkg src/VinylCutter.csproj
+	$(Q) dotnet tool install --add-source nupkg -g VinylCutter
+
 build-release::
 	$(Q) dotnet build -c Release -nologo /v:q
 
