@@ -7,7 +7,7 @@ namespace Model
 		int Y;
 
 		[Inject]
-        public double Size => X * Y;
+		public double Size => X * Y;
 	}
 
 	public class NamedPointList
