@@ -48,6 +48,9 @@ which can be run with:
 
 `dotnet records`.
 
+If you recieve an error similar to `The specified framework 'Microsoft.NETCore.App', version '2.1.2' was not found` 
+install the [latest runtime](https://www.microsoft.com/net/learn/get-started-with-dotnet-tutorial).
+
 A number of common use cases are covered in the [Quickstart](docs/quickstart.md).
 
 ```Usage: VinylCutter.exe [OPTIONS]+ [FILES]+
