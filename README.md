@@ -95,6 +95,9 @@ public partial class Point
 
 A number of [Attributes](docs/attributes.md), such as the `[With]` used above, can be added to further customize the generated code.
 
+### Generated Code Stability
+
+VinylCutter is still under active development and the generated code surface will likley evolve over time. In particular it likely will align closer to the [proposed generated code](https://github.com/chamons/VinylCutter/issues/27).
 
 ## Development
 
