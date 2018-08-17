@@ -303,5 +303,21 @@ public partial class Container
 
 			Assert.Equal (expected, Generate (record, globalNamespace : "Test"));
 		}
+
+		[Fact]
+		public void DottedNamespace ()
+		{
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false);
+
+			string expected = @"namespace Test.Second
+{
+	public partial class SimpleClass
+	{
+	}
+}
+";
+
+			Assert.Equal (expected, Generate (record, globalNamespace : "Test.Second"));
+		}
 	}
 }

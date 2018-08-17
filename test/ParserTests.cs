@@ -272,6 +272,13 @@ public class SimpleClass : Foo, IFoo
 		}
 
 		[Fact]
+		public void DottedNamespace ()
+		{
+			FileInfo file = Parse (@"namespace Test.Second { public class SimpleClass { } }");
+			Assert.Equal ("Test.Second", file.GlobalNamespace);
+		}
+
+		[Fact]
 		public void CompileError ()
 		{
 			Parser parser = new Parser (@"public class SimpleClass

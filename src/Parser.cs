@@ -108,7 +108,7 @@ public class Default : System.Attribute { public Default (string value) {} }
 				return;
 
 			if (FirstNamespace == "" && symbol.ContainingNamespace != null)
-				FirstNamespace = symbol.ContainingNamespace.Name;
+				FirstNamespace = symbol.ContainingNamespace.IsGlobalNamespace ? "" : symbol.ContainingNamespace.ToString ();
 
 			List<ItemInfo> items = new List<ItemInfo> ();
 
