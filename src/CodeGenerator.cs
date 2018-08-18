@@ -99,20 +99,20 @@ namespace VinylCutter
 			{
 				ItemInfo classItem = record.Items[i];
 				string defaultValue = classItem.DefaultValue != null ? $" = {classItem.DefaultValue}" : "";
-				builder.Append ($"{GetTypeName (classItem, true)} {classItem.Name.CamelPrefix ()}{defaultValue}");
+				builder.Append ($"{GetTypeName (classItem, true)} {classItem.Name.SmartLowerCase ()}{defaultValue}");
 				if (i != record.Items.Length - 1)
 					builder.Append (", ");
 			}
 			return builder.ToString ();
 		}
 		
-		static string CreateConstructorInvokeArgs (RecordInfo record, int indexToNotCapitalize = -1)
+		static string CreateConstructorInvokeArgs (RecordInfo record, int indexToNotCapitalize)
 		{
 			StringBuilder builder = new StringBuilder ();
 			for (int i = 0 ; i < record.Items.Length ; ++i)
 			{
 				ItemInfo classItem = record.Items[i];
-				string classItemName = indexToNotCapitalize == i ? classItem.Name.CamelPrefix () : classItem.Name;
+				string classItemName = indexToNotCapitalize == i ? classItem.Name.SmartLowerCase () : classItem.Name;
 				builder.Append (classItemName);
 				if (i != record.Items.Length - 1)
 					builder.Append (", ");
@@ -138,8 +138,8 @@ namespace VinylCutter
 		static string GenerateFieldAssign (ItemInfo item)
 		{
 			if (item.IsCollection)
-				return $"ImmutableArray.CreateRange ({item.Name.CamelPrefix ()} ?? Array.Empty<{MakeFriendlyTypeName (item.TypeName)}> ())";
-			return item.Name.CamelPrefix ();
+				return $"ImmutableArray.CreateRange ({item.Name.SmartLowerCase ()} ?? Array.Empty<{MakeFriendlyTypeName (item.TypeName)}> ())";
+			return item.Name.SmartLowerCase ();
 		}
 
 		static void GenerateWith (RecordInfo record, CodeWriter writer)
@@ -158,7 +158,7 @@ namespace VinylCutter
 				writer.WriteLine ();
 				ItemInfo classItem = record.Items[i];
 				string itemTypeName = GetTypeName (classItem, true);
-				writer.WriteLine ($"public {record.Name} With{classItem.Name} ({itemTypeName} {classItem.Name.CamelPrefix ()})");
+				writer.WriteLine ($"public {record.Name} With{classItem.Name} ({itemTypeName} {classItem.Name.SmartLowerCase ()})");
 				writer.WriteLine ("{");
 				writer.Indent ();
 

@@ -319,5 +319,49 @@ public partial class Container
 
 			Assert.Equal (expected, Generate (record, globalNamespace : "Test.Second"));
 		}
+
+		[Fact]
+		public void FullCapsNames ()
+		{
+			{
+				ItemInfo item = new ItemInfo ("ID", "Int32");
+				ItemInfo item2 = new ItemInfo ("UID", "Int32", true);
+
+				RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, new ItemInfo [] { item, item2 });
+
+				string expected = @"using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+
+namespace Test
+{
+	public partial class SimpleClass
+	{
+		public int ID { get; }
+		public ImmutableArray<int> UID { get; }
+
+		public SimpleClass (int id, IEnumerable<int> uid)
+		{
+			ID = id;
+			UID = ImmutableArray.CreateRange (uid ?? Array.Empty<int> ());
+		}
+
+		public SimpleClass WithID (int id)
+		{
+			return new SimpleClass (id, UID);
+		}
+
+		public SimpleClass WithUID (IEnumerable<int> uid)
+		{
+			return new SimpleClass (ID, uid);
+		}
+	}
+}
+";
+
+				Assert.Equal (expected, Generate (record, globalNamespace : "Test"));
+
+			}
+		}
 	}
 }

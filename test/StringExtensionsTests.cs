@@ -24,5 +24,15 @@ namespace VinylCutter.Tests
 			Assert.Equal ("foo", "Foo".CamelPrefix ());
 			Assert.Equal ("foo", "foo".CamelPrefix ());
 		}
+
+		[Fact]
+		public void SmartLowerCase ()
+		{
+			Assert.Equal ("foo", "Foo".SmartLowerCase ());
+			Assert.Equal ("foo", "foo".SmartLowerCase ());
+			Assert.Equal ("id", "ID".SmartLowerCase ());
+			Assert.Equal ("iDa", "IDa".SmartLowerCase ());
+
+		}
 	}
 }
