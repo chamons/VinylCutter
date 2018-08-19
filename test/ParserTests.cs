@@ -36,6 +36,7 @@ namespace VinylCutter.Tests
 			Assert.Equal ("Int32", file.Records[0].Items[0].TypeName);
 			Assert.False (file.Records[0].Items[0].IsCollection);
 			Assert.False (file.Records[0].Items[0].IncludeWith);
+			Assert.False (file.Records[0].Items[0].IsMutable);
 		}
 
 		[Fact]
@@ -48,6 +49,8 @@ namespace VinylCutter.Tests
 			Assert.Equal ("Double", file.Records[0].Items [0].TypeName);
 			Assert.False (file.Records[0].Items [0].IsCollection);
 			Assert.False (file.Records[0].Items [0].IncludeWith);
+			Assert.False (file.Records[0].Items [0].IsMutable);
+
 		}
 
 		[Fact]
@@ -276,6 +279,42 @@ public class SimpleClass : Foo, IFoo
 		{
 			FileInfo file = Parse (@"namespace Test.Second { public class SimpleClass { } }");
 			Assert.Equal ("Test.Second", file.GlobalNamespace);
+		}
+
+		[Fact]
+		public void Mutable ()
+		{
+			FileInfo file = Parse (@"public class SimpleClass
+{
+	bool X;
+
+	[Mutable]
+	object o;
+
+	[Mutable]
+	List<object> Caches;
+}
+");
+			Assert.False (file.Records[0].Items[0].IsMutable);
+			Assert.True (file.Records[0].Items[1].IsMutable);
+			Assert.Equal ("Object", file.Records[0].Items[1].TypeName);
+			Assert.True (file.Records[0].Items[2].IsMutable);
+			Assert.Equal ("List <Object>", file.Records[0].Items[2].TypeName);
+			Assert.False (file.Records[0].Items[2].IsCollection);
+		}
+
+		[Fact]
+		public void IgnoresStubs ()
+		{
+			FileInfo file = Parse (@"public class Character
+	{
+		string Name;
+	}
+
+	interface CharacterResolver {}");
+			
+			Assert.Single (file.Records);
+			Assert.Equal ("Character", file.Records[0].Name);
 		}
 
 		[Fact]

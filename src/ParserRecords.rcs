@@ -22,6 +22,9 @@ namespace VinylCutter
 		
 		[Default ("null")]
 		public string DefaultValue;
+
+		[Default ("false")]
+		public bool IsMutable;
 	}
 
 	[Inject]

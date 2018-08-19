@@ -4,7 +4,7 @@ all:: build
 
 # To prevent bootstrapping issues we check in src/VinylCutter/ParserRecords.g.cs
 regenerate::
-	$(Q) dotnet run --project src/VinylCutter.csproj src/ParserRecords.rcs --output src/VinylCutter/
+	$(Q) dotnet run --project src/VinylCutter.csproj src/ParserRecords.rcs --output src
 
 build::
 	$(Q) dotnet build -nologo /v:q

@@ -33,6 +33,9 @@ public class Inject : System.Attribute { }
 
 [AttributeUsage (AttributeTargets.Field | AttributeTargets.Property)]
 public class Default : System.Attribute { public Default (string value) {} }
+
+[AttributeUsage (AttributeTargets.Field | AttributeTargets.Property)]
+public class Mutable : System.Attribute { }
 ";
 
 		List<RecordInfo> Records;
@@ -165,12 +168,16 @@ public class Default : System.Attribute { public Default (string value) {} }
 		ItemInfo CreateClassItem (ISymbol symbol, ITypeSymbol type)
 		{
 			string defaultValue = GetDefaultValue (symbol);
+			bool mutableValue = GetMutable (symbol);
 			if (type.OriginalDefinition.Equals (Symbols.List))
 			{
 				INamedTypeSymbol t = (INamedTypeSymbol)type;
-				return new ItemInfo (symbol.Name, t.TypeArguments[0].Name, true, HasWith (symbol), defaultValue);
+				if (mutableValue) // Mutable Items are not converted to immutable collections if they are lists
+					return new ItemInfo (symbol.Name, $"List <{t.TypeArguments[0].Name}>", false, HasWith (symbol), defaultValue, true);
+				else
+					return new ItemInfo (symbol.Name, t.TypeArguments[0].Name, true, HasWith (symbol), defaultValue);
 			}
-			return new ItemInfo (symbol.Name, type.Name, false, HasWith (symbol), defaultValue);
+			return new ItemInfo (symbol.Name, type.Name, false, HasWith (symbol), defaultValue, mutableValue);
 		}
 	
 		string GetDefaultValue (ISymbol symbol)
@@ -186,6 +193,11 @@ public class Default : System.Attribute { public Default (string value) {} }
 				return "\"\"";
 			return defaultValue;
 		}
+
+		bool GetMutable (ISymbol symbol)
+		{
+			return symbol.GetAttributes ().Any (x => x.AttributeClass.Equals (Symbols.MutableAttribute));
+		}
 	}
 
 	public class Symbols
@@ -197,6 +209,7 @@ public class Default : System.Attribute { public Default (string value) {} }
 		public INamedTypeSymbol WithAttribute;
 		public INamedTypeSymbol SkipAttribute;
 		public INamedTypeSymbol DefaultAttribute;
+		public INamedTypeSymbol MutableAttribute;
 		public INamedTypeSymbol List;
 
 		public Symbols (CSharpCompilation compilation)
@@ -208,6 +221,7 @@ public class Default : System.Attribute { public Default (string value) {} }
 			WithAttribute = compilation.GetTypeByMetadataName ("With");
 			SkipAttribute = compilation.GetTypeByMetadataName ("Skip");
 			DefaultAttribute = compilation.GetTypeByMetadataName ("Default");
+			MutableAttribute = compilation.GetTypeByMetadataName ("Mutable");
 			List = compilation.GetTypeByMetadataName ("System.Collections.Generic.List`1");
 		}
 	}

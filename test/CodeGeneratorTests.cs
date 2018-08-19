@@ -363,5 +363,41 @@ namespace Test
 
 			}
 		}
+
+		[Fact]
+		public void Mutable ()
+		{
+			{
+				ItemInfo item = new ItemInfo ("ID", "Int32");
+				ItemInfo item2 = new ItemInfo ("Cache", "object", isMutable: true);
+				ItemInfo item3 = new ItemInfo ("Lookup", "List<object>", isMutable: true);
+
+				RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, new ItemInfo [] { item, item2, item3 });
+
+				string expected = @"namespace Test
+{
+	public partial class SimpleClass
+	{
+		public int ID { get; }
+		object Cache;
+		List<object> Lookup;
+
+		public SimpleClass (int id)
+		{
+			ID = id;
+		}
+
+		public SimpleClass WithID (int id)
+		{
+			return new SimpleClass (id) { Cache = this.Cache, Lookup = this.Lookup };
+		}
+	}
+}
+";
+
+				Assert.Equal (expected, Generate (record, globalNamespace : "Test"));
+
+			}
+		}
 	}
 }

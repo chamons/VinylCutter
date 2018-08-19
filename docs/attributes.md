@@ -12,7 +12,7 @@ By default, the following parts of your record definition in C# will be transfer
 - Interfaces and base types will be transfered to the generated code.
    - This may require "subbing" in the interface in your definition: `interface IFoo {}`
 
-There are currently four attributes that you attach to your definitions:
+There are currently five attributes that you attach to your definitions:
 
 - **[Default]** will generate constructors with default values for those fields.
    - **Note:** The text in default will be directly inserted into the generated code. `[Default ("")]` is special cased to be empty string, but other strings will need to be quoted.
@@ -22,3 +22,4 @@ There are currently four attributes that you attach to your definitions:
 - **[With]** will add associated WithFoo methods to construct new instances with modifications.
 	- If placed on the class or struct, it will apply to all fields of the record
 	- If placed on specific fields\properties it will apply only to those specific items.
+- **[Mutable]** on field will create a private field that is not set by the constructor, and copied directly to new instances

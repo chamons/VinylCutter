@@ -34,6 +34,17 @@ namespace Integration
 		[Inject]
 		int Length => Points.Count;
 	}
+
+	interface CharacterResolver {}
+
+	[With]
+	public struct GameState 
+	{
+		long Tick;
+
+		[Mutable]
+		List<CharacterResolver> ActiveResolvers;
+	}
 }
 ";
 			Parser parser = new Parser (testCode);
@@ -85,6 +96,22 @@ namespace Integration
 		}
 
 		int Length => Points.Count;
+	}
+
+	public partial struct GameState
+	{
+		public long Tick { get; }
+		List <CharacterResolver> ActiveResolvers;
+
+		public GameState (long tick)
+		{
+			Tick = tick;
+		}
+
+		public GameState WithTick (long tick)
+		{
+			return new GameState (tick) { ActiveResolvers = this.ActiveResolvers };
+		}
 	}
 }
 ", output);

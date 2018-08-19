@@ -95,31 +95,74 @@ namespace VinylCutter
 		static string CreateConstructorArgs (RecordInfo record)
 		{
 			StringBuilder builder = new StringBuilder ();
+			bool first = true;
 			for (int i = 0 ; i < record.Items.Length ; ++i)
 			{
 				ItemInfo classItem = record.Items[i];
+				if (classItem.IsMutable)
+					continue;
+
+				if (first)
+					first = false;
+				else
+					builder.Append (", ");
+				
 				string defaultValue = classItem.DefaultValue != null ? $" = {classItem.DefaultValue}" : "";
 				builder.Append ($"{GetTypeName (classItem, true)} {classItem.Name.SmartLowerCase ()}{defaultValue}");
-				if (i != record.Items.Length - 1)
-					builder.Append (", ");
-			}
-			return builder.ToString ();
-		}
-		
-		static string CreateConstructorInvokeArgs (RecordInfo record, int indexToNotCapitalize)
-		{
-			StringBuilder builder = new StringBuilder ();
-			for (int i = 0 ; i < record.Items.Length ; ++i)
-			{
-				ItemInfo classItem = record.Items[i];
-				string classItemName = indexToNotCapitalize == i ? classItem.Name.SmartLowerCase () : classItem.Name;
-				builder.Append (classItemName);
-				if (i != record.Items.Length - 1)
-					builder.Append (", ");
 			}
 			return builder.ToString ();
 		}
 
+		static string CreateConstructorInvokeArgs (RecordInfo record, int indexToNotCapitalize)
+		{
+			StringBuilder builder = new StringBuilder ();
+			bool first = true;
+			for (int i = 0 ; i < record.Items.Length ; ++i)
+			{
+				ItemInfo classItem = record.Items[i];
+				if (classItem.IsMutable)
+					continue;
+
+				if (first)
+					first = false;
+				else
+					builder.Append (", ");
+				
+				
+				string classItemName = indexToNotCapitalize == i ? classItem.Name.SmartLowerCase () : classItem.Name;
+				builder.Append (classItemName);
+			}
+			return builder.ToString ();
+		}
+
+
+		static string CreateMutableAssignmentBlock (RecordInfo record)
+		{
+			StringBuilder builder = new StringBuilder ();
+
+			if (record.Items.Any (x => x.IsMutable))
+			{
+				builder.Append (" {");
+
+				bool first = true;
+				for (int i = 0 ; i < record.Items.Length ; ++i)
+				{
+					ItemInfo classItem = record.Items[i];
+					if (!classItem.IsMutable)
+						continue;
+
+					if (first)
+						first = false;
+					else
+						builder.Append (",");
+
+					builder.Append ($" {classItem.Name} = this.{classItem.Name}");
+				}
+				builder.Append (" }");
+			}
+
+			return builder.ToString ();
+		}
 
 		static void GenerateConstructor (RecordInfo record, CodeWriter writer)
 		{
@@ -129,7 +172,7 @@ namespace VinylCutter
 			writer.WriteLine ($"public {record.Name} ({CreateConstructorArgs (record)})");
 			writer.WriteLine ("{");
 			writer.Indent ();
-			foreach (var classItem in record.Items)
+			foreach (var classItem in record.Items.Where (x => !x.IsMutable))
 				writer.WriteLine ($"{classItem.Name} = {GenerateFieldAssign (classItem)};");
 			writer.Dedent ();
 			writer.WriteLine ("}");
@@ -152,6 +195,9 @@ namespace VinylCutter
 
 			for (int i = 0 ; i < record.Items.Length ; ++i)
 			{
+				if (record.Items[i].IsMutable)
+					continue;
+
 				if (!(record.IncludeWith || record.Items[i].IncludeWith))
 					continue;
 
@@ -162,7 +208,7 @@ namespace VinylCutter
 				writer.WriteLine ("{");
 				writer.Indent ();
 
-				writer.WriteLine ($"return new {record.Name} ({CreateConstructorInvokeArgs (record, i)});");
+				writer.WriteLine ($"return new {record.Name} ({CreateConstructorInvokeArgs (record, i)}){CreateMutableAssignmentBlock (record)};");
 
 				writer.Dedent ();
 				writer.WriteLine ("}");
@@ -171,7 +217,10 @@ namespace VinylCutter
 
 		static void GenerateProperty (ItemInfo item, CodeWriter writer)
 		{
-			writer.WriteLine ($"public {GetTypeName (item, false)} {item.Name} {{ get; }}");
+			if (item.IsMutable)
+				writer.WriteLine ($"{GetTypeName (item, false)} {item.Name};");
+			else
+				writer.WriteLine ($"public {GetTypeName (item, false)} {item.Name} {{ get; }}");
 		}
 
 		static void GenerateClassHeader (RecordInfo record, CodeWriter writer)
