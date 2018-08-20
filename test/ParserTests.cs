@@ -318,6 +318,40 @@ public class SimpleClass : Foo, IFoo
 		}
 
 		[Fact]
+		public void MultipleInjectsHaveProperWhitespaceInRecord ()
+		{
+			FileInfo file = Parse (@"public class Character
+	{
+		string Name;
+
+		[Inject]
+		public interface Foo {}
+
+		[Inject]
+		public interface Bar {}
+	}");
+
+			Assert.Equal ("\t\tpublic interface Foo {}\n\n\t\tpublic interface Bar {}", file.Records[0].InjectCode);
+		}
+
+		[Fact]
+		public void MultipleInjectsHaveProperWhitespaceTopLevel ()
+		{
+			FileInfo file = Parse (@"		[Inject]
+		public interface Foo {}
+
+		[Inject]
+		public interface Bar {}
+
+	public class Character
+	{
+		string Name;
+	}");
+
+			Assert.Equal ("\t\tpublic interface Foo {}\n\n\t\tpublic interface Bar {}", file.InjectCode);
+		}
+
+		[Fact]
 		public void CompileError ()
 		{
 			Parser parser = new Parser (@"public class SimpleClass

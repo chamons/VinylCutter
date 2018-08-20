@@ -90,11 +90,18 @@ public class Mutable : System.Attribute { }
 		{
 			StringBuilder builder = new StringBuilder ();
 
+			bool first = true;
 			foreach (var s in root.DescendantNodes (descendIntoChildren: n => n == root || n is NamespaceDeclarationSyntax))
 			{
 				ISymbol symbol = Model.GetDeclaredSymbol (s);
 				if (symbol != null && HasInject (symbol))
+				{
+					if (first)
+						first = false;
+					else
+						builder.Append ("\n\n");
 					builder.Append (GetSourceCode (symbol));
+				}
 			}
 			return builder.ToString ();
 		}
@@ -150,8 +157,15 @@ public class Mutable : System.Attribute { }
 		{
 			StringBuilder builder = new StringBuilder ();
 
+			bool first = true;
 			foreach (var injectItem in symbol.GetMembers ().Where (x => HasInject (x)))
+			{
+				if (first)
+					first = false;
+				else
+					builder.Append ("\n\n");
 				builder.Append (GetSourceCode (injectItem));
+			}
 
 			return builder.ToString ();
 		}

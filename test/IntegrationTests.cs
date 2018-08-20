@@ -17,6 +17,9 @@ namespace Integration
 	[Inject]
 	public enum Visibility { Public, Private }
 
+	[Inject]
+	public enum Direction { North, South, East, West }
+
 	[With]
 	public class Point : IPoint
 	{
@@ -33,6 +36,9 @@ namespace Integration
 
 		[Inject]
 		int Length => Points.Count;
+
+		[Inject]
+		string FullName => Name;
 	}
 
 	interface CharacterResolver {}
@@ -56,6 +62,8 @@ using System.Collections.Immutable;
 namespace Integration
 {
 	public enum Visibility { Public, Private }
+
+	public enum Direction { North, South, East, West }
 
 	public partial class Point : IPoint
 	{
@@ -96,6 +104,8 @@ namespace Integration
 		}
 
 		int Length => Points.Count;
+
+		string FullName => Name;
 	}
 
 	public partial struct GameState
