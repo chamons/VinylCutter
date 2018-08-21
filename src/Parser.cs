@@ -179,6 +179,12 @@ public class Mutable : System.Attribute { }
 			return string.Join ("\n", lines.Skip (1));
 		}
 
+		SymbolDisplayFormat DisplayFormat = new SymbolDisplayFormat (
+			genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+			typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypes,
+			miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes
+		);
+
 		ItemInfo CreateClassItem (ISymbol symbol, ITypeSymbol type)
 		{
 			string defaultValue = GetDefaultValue (symbol);
@@ -187,9 +193,9 @@ public class Mutable : System.Attribute { }
 			{
 				INamedTypeSymbol t = (INamedTypeSymbol)type;
 				if (mutableValue) // Mutable Items are not converted to immutable collections if they are lists
-					return new ItemInfo (symbol.Name, $"List <{t.TypeArguments[0].Name}>", false, HasWith (symbol), defaultValue, true);
+					return new ItemInfo (symbol.Name, t.ToDisplayString (DisplayFormat), false, HasWith (symbol), defaultValue, true);
 				else
-					return new ItemInfo (symbol.Name, t.TypeArguments[0].Name, true, HasWith (symbol), defaultValue);
+					return new ItemInfo (symbol.Name, t.TypeArguments[0].ToDisplayString (DisplayFormat), true, HasWith (symbol), defaultValue);
 			}
 			return new ItemInfo (symbol.Name, type.Name, false, HasWith (symbol), defaultValue, mutableValue);
 		}

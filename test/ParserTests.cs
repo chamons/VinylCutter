@@ -61,7 +61,18 @@ namespace VinylCutter.Tests
 			Assert.Single (file.Records[0].Items);
 			Assert.Equal ("Z", file.Records[0].Items [0].Name);
 			Assert.True(file.Records[0].Items [0].IsCollection);
-			Assert.Equal ("Int32", file.Records[0].Items [0].TypeName);
+			Assert.Equal ("int", file.Records[0].Items [0].TypeName);
+		}
+
+		[Fact]
+		public void CollectionsWithGenerics ()
+		{
+			FileInfo file = Parse ("public class SimpleClass { List<List<int>> Z; }");
+
+			Assert.Single (file.Records[0].Items);
+			Assert.Equal ("Z", file.Records[0].Items [0].Name);
+			Assert.True(file.Records[0].Items [0].IsCollection);
+			Assert.Equal ("List<int>", file.Records[0].Items [0].TypeName);
 		}
 
 		[Fact]
@@ -299,8 +310,21 @@ public class SimpleClass : Foo, IFoo
 			Assert.True (file.Records[0].Items[1].IsMutable);
 			Assert.Equal ("Object", file.Records[0].Items[1].TypeName);
 			Assert.True (file.Records[0].Items[2].IsMutable);
-			Assert.Equal ("List <Object>", file.Records[0].Items[2].TypeName);
+			Assert.Equal ("List<object>", file.Records[0].Items[2].TypeName);
 			Assert.False (file.Records[0].Items[2].IsCollection);
+		}
+
+		[Fact]
+		public void MutableWithGeneric ()
+		{
+			FileInfo file = Parse (@"public class SimpleClass
+{
+	[Mutable]
+	List<List<int>> o;
+}
+");
+			Assert.True (file.Records[0].Items[0].IsMutable);
+			Assert.Equal ("List<List<int>>", file.Records[0].Items[0].TypeName);
 		}
 
 		[Fact]

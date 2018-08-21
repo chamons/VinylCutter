@@ -111,7 +111,7 @@ namespace Integration
 	public partial struct GameState
 	{
 		public long Tick { get; }
-		List <CharacterResolver> ActiveResolvers;
+		List<CharacterResolver> ActiveResolvers;
 
 		public GameState (long tick)
 		{

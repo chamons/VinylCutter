@@ -399,5 +399,31 @@ namespace Test
 
 			}
 		}
+
+		[Fact]
+		public void MutableGeneric ()
+		{
+			{
+				ItemInfo item = new ItemInfo ("Lookup", "List <Int32>", isMutable: true);
+
+				RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, new ItemInfo [] { item });
+
+				string expected = @"namespace Test
+{
+	public partial class SimpleClass
+	{
+		List <Int32> Lookup;
+
+		public SimpleClass ()
+		{
+		}
+	}
+}
+";
+
+				Assert.Equal (expected, Generate (record, globalNamespace : "Test"));
+
+			}
+		}
 	}
 }
