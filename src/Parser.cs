@@ -197,14 +197,14 @@ public class Mutable : System.Attribute { }
 				else
 					return new ItemInfo (symbol.Name, t.TypeArguments[0].ToDisplayString (DisplayFormat), true, false, HasWith (symbol), defaultValue);
 			}
-            else if (type.OriginalDefinition.Equals (Symbols.Dictionary))
-            {
-                INamedTypeSymbol t = (INamedTypeSymbol)type;
-                if (mutableValue) // Mutable Items are not converted to immutable collections if they are lists
-                    return new ItemInfo (symbol.Name, t.ToDisplayString (DisplayFormat), false, false, HasWith (symbol), defaultValue, true);
-                else
-                    return new ItemInfo (symbol.Name, string.Join (",", t.TypeArguments.Select (x => x.ToDisplayString(DisplayFormat))), false, true, HasWith (symbol), defaultValue);
-            }
+			else if (type.OriginalDefinition.Equals (Symbols.Dictionary))
+			{
+				INamedTypeSymbol t = (INamedTypeSymbol)type;
+				if (mutableValue) // Mutable Items are not converted to immutable collections if they are lists
+					return new ItemInfo (symbol.Name, t.ToDisplayString (DisplayFormat), false, false, HasWith (symbol), defaultValue, true);
+				else
+					return new ItemInfo (symbol.Name, string.Join (",", t.TypeArguments.Select (x => x.ToDisplayString(DisplayFormat))), false, true, HasWith (symbol), defaultValue);
+			}
             return new ItemInfo (symbol.Name, type.Name, false, false, HasWith (symbol), defaultValue, mutableValue);
 		}
 	
@@ -239,9 +239,9 @@ public class Mutable : System.Attribute { }
 		public INamedTypeSymbol DefaultAttribute;
 		public INamedTypeSymbol MutableAttribute;
 		public INamedTypeSymbol List;
-        public INamedTypeSymbol Dictionary;
+		public INamedTypeSymbol Dictionary;
 
-        public Symbols (CSharpCompilation compilation)
+		public Symbols (CSharpCompilation compilation)
 		{
 			Attribute = compilation.GetTypeByMetadataName (typeof (System.Attribute).FullName);
 			Object = compilation.GetTypeByMetadataName (typeof (System.Object).FullName);
@@ -252,7 +252,7 @@ public class Mutable : System.Attribute { }
 			DefaultAttribute = compilation.GetTypeByMetadataName ("Default");
 			MutableAttribute = compilation.GetTypeByMetadataName ("Mutable");
 			List = compilation.GetTypeByMetadataName ("System.Collections.Generic.List`1");
-            Dictionary = compilation.GetTypeByMetadataName ("System.Collections.Generic.Dictionary`2");
+			Dictionary = compilation.GetTypeByMetadataName ("System.Collections.Generic.Dictionary`2");
         }
     }
 }

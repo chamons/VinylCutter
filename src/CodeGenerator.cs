@@ -182,8 +182,8 @@ namespace VinylCutter
 		{
 			if (item.IsCollection)
 				return $"ImmutableArray.CreateRange ({item.Name.SmartLowerCase ()} ?? Array.Empty<{MakeFriendlyTypeName (item.TypeName)}> ())";
-            if (item.IsDictionary)
-                return $"{item.Name.SmartLowerCase ()}.ToImmutableDictionary ()";
+			if (item.IsDictionary)
+				return $"{item.Name.SmartLowerCase ()}.ToImmutableDictionary ()";
             return item.Name.SmartLowerCase ();
 		}
 
@@ -256,12 +256,12 @@ namespace VinylCutter
 				string arrayType = isArg ? "IEnumerable" : "ImmutableArray";
 				return $"{arrayType}<{MakeFriendlyTypeName (item.TypeName)}>";
 			}
-            else if (item.IsDictionary)
-            {
-                string dictType = isArg ? "Dictionary" : "ImmutableDictionary";
-                string par = string.Join (", ", item.TypeName.Split (',').Select (x => MakeFriendlyTypeName (x)));
-                return $"{dictType}<{par}>";
-            }
+			else if (item.IsDictionary)
+			{
+				string dictType = isArg ? "Dictionary" : "ImmutableDictionary";
+				string par = string.Join (", ", item.TypeName.Split (',').Select (x => MakeFriendlyTypeName (x)));
+				return $"{dictType}<{par}>";
+			}
 
             return MakeFriendlyTypeName (item.TypeName);
 		}

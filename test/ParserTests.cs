@@ -75,17 +75,17 @@ namespace VinylCutter.Tests
 			Assert.Equal ("List<int>", file.Records[0].Items [0].TypeName);
 		}
 
-        [Fact]
-        public void CollectionsWithDictionary ()
-        {
-            FileInfo file = Parse ("public class SimpleClass { Dictionary<int, string> Z; }");
+		[Fact]
+		public void CollectionsWithDictionary ()
+		{
+			FileInfo file = Parse ("public class SimpleClass { Dictionary<int, string> Z; }");
 
-            Assert.Single (file.Records[0].Items);
-            Assert.Equal ("Z", file.Records[0].Items[0].Name);
-            Assert.False (file.Records[0].Items[0].IsCollection);
-            Assert.True (file.Records[0].Items[0].IsDictionary);
-            Assert.Equal ("int,string", file.Records[0].Items[0].TypeName);
-        }
+			Assert.Single (file.Records[0].Items);
+			Assert.Equal ("Z", file.Records[0].Items[0].Name);
+			Assert.False (file.Records[0].Items[0].IsCollection);
+			Assert.True (file.Records[0].Items[0].IsDictionary);
+			Assert.Equal ("int,string", file.Records[0].Items[0].TypeName);
+		}
 
         [Fact]
 		public void OtherRecordTypes ()
