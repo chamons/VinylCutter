@@ -94,13 +94,13 @@ public partial class SimpleClass
 			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
 		}
 
-        [Fact]
-        public void Dictionary ()
-        {
-            ItemInfo item = new ItemInfo ("Foo", "string,Int32", false, true);
-            RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ());
+		[Fact]
+		public void Dictionary ()
+		{
+			ItemInfo item = new ItemInfo ("Foo", "string,Int32", false, true);
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ());
 
-            string expected = @"using System;
+			string expected = @"using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
@@ -119,8 +119,8 @@ public partial class SimpleClass
 	}
 }
 ";
-            Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
-        }
+			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
+		}
 
         [Fact]
 		public void OtherRecordTypes ()

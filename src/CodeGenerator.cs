@@ -184,7 +184,7 @@ namespace VinylCutter
 				return $"ImmutableArray.CreateRange ({item.Name.SmartLowerCase ()} ?? Array.Empty<{MakeFriendlyTypeName (item.TypeName)}> ())";
 			if (item.IsDictionary)
 				return $"{item.Name.SmartLowerCase ()}.ToImmutableDictionary ()";
-            return item.Name.SmartLowerCase ();
+			return item.Name.SmartLowerCase ();
 		}
 
 		static void GenerateWith (RecordInfo record, CodeWriter writer)
@@ -263,7 +263,7 @@ namespace VinylCutter
 				return $"{dictType}<{par}>";
 			}
 
-            return MakeFriendlyTypeName (item.TypeName);
+			return MakeFriendlyTypeName (item.TypeName);
 		}
 
 		static string MakeFriendlyTypeName (string typeName)

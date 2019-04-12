@@ -205,7 +205,7 @@ public class Mutable : System.Attribute { }
 				else
 					return new ItemInfo (symbol.Name, string.Join (",", t.TypeArguments.Select (x => x.ToDisplayString(DisplayFormat))), false, true, HasWith (symbol), defaultValue);
 			}
-            return new ItemInfo (symbol.Name, type.Name, false, false, HasWith (symbol), defaultValue, mutableValue);
+			return new ItemInfo (symbol.Name, type.Name, false, false, HasWith (symbol), defaultValue, mutableValue);
 		}
 	
 		string GetDefaultValue (ISymbol symbol)
