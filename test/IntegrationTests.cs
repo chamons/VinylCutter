@@ -124,7 +124,7 @@ namespace Integration
 		}
 	}
 }
-", output);
+", output, ignoreLineEndingDifferences: true);
 		}
 	}
 }

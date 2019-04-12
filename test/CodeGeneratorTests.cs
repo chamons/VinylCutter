@@ -40,7 +40,7 @@ public partial class SimpleClass2
 }
 ";
 
-			Assert.Equal (expected, Generate (new RecordInfo[] { record, record2 }));
+			Assert.Equal (expected, Generate (new RecordInfo[] { record, record2 }), ignoreLineEndingDifferences: true);
 		}
 
 		[Fact]
@@ -62,7 +62,7 @@ public partial class SimpleClass2
 	}
 }
 ";
-			Assert.Equal (expected, Generate (record));
+			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
 
 		}
 
@@ -91,7 +91,7 @@ public partial class SimpleClass
 	}
 }
 ";
-			Assert.Equal (expected, Generate (record));
+			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
 		}
 		
 		[Fact]
@@ -125,7 +125,7 @@ public partial class Container
 }
 ";
 
-			Assert.Equal (expected, Generate (new RecordInfo[] { record, record2 }));
+			Assert.Equal (expected, Generate (new RecordInfo[] { record, record2 }), ignoreLineEndingDifferences: true);
 		}
 		
 		[Fact]
@@ -158,7 +158,7 @@ public partial class Container
 }
 ";
 			
-			Assert.Equal (expected, Generate (record));
+			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
 		}
 		
 		[Fact]
@@ -186,7 +186,7 @@ public partial class Container
 }
 ";
 
-			Assert.Equal (expected, Generate (record));
+			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
 		}
 
 		[Fact]
@@ -211,7 +211,7 @@ public partial class Container
 }
 ";
 
-			Assert.Equal (expected, Generate (record));
+			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
 		}
 
 		[Fact]
@@ -238,7 +238,7 @@ public partial class Container
 	}
 }
 ";
-			Assert.Equal (expected, Generate (record, injectCode : "\tpublic enum Visibility { Public, Private }", globalNamespace : "Test"));
+			Assert.Equal (expected, Generate (record, injectCode : "\tpublic enum Visibility { Public, Private }", globalNamespace : "Test"), ignoreLineEndingDifferences: true);
 		}
 
 		[Fact]
@@ -258,7 +258,7 @@ public partial class Container
 }
 ";
 
-			Assert.Equal (expected, Generate (record));
+			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
 		}
 
 		[Fact]
@@ -278,7 +278,7 @@ public partial class Container
 }
 ";
 
-			Assert.Equal (expected, Generate (record));
+			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
 		}
 
 		[Fact]
@@ -301,7 +301,7 @@ public partial class Container
 }
 ";
 
-			Assert.Equal (expected, Generate (record, globalNamespace : "Test"));
+			Assert.Equal (expected, Generate (record, globalNamespace : "Test"), ignoreLineEndingDifferences: true);
 		}
 
 		[Fact]
@@ -317,7 +317,7 @@ public partial class Container
 }
 ";
 
-			Assert.Equal (expected, Generate (record, globalNamespace : "Test.Second"));
+			Assert.Equal (expected, Generate (record, globalNamespace : "Test.Second"), ignoreLineEndingDifferences: true);
 		}
 
 		[Fact]
@@ -359,7 +359,7 @@ namespace Test
 }
 ";
 
-				Assert.Equal (expected, Generate (record, globalNamespace : "Test"));
+				Assert.Equal (expected, Generate (record, globalNamespace : "Test"), ignoreLineEndingDifferences: true);
 
 			}
 		}
@@ -395,7 +395,7 @@ namespace Test
 }
 ";
 
-				Assert.Equal (expected, Generate (record, globalNamespace : "Test"));
+				Assert.Equal (expected, Generate (record, globalNamespace : "Test"), ignoreLineEndingDifferences: true);
 
 			}
 		}
@@ -421,7 +421,7 @@ namespace Test
 }
 ";
 
-				Assert.Equal (expected, Generate (record, globalNamespace : "Test"));
+				Assert.Equal (expected, Generate (record, globalNamespace : "Test"), ignoreLineEndingDifferences: true);
 
 			}
 		}
