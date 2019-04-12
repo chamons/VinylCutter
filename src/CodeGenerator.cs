@@ -65,7 +65,7 @@ namespace VinylCutter
 
 		void GenerateUsings (CodeWriter writer)
 		{
-			if (File.Records.Any (x => x.Items.Any (y => y.IsCollection)))
+			if (File.Records.Any (x => x.Items.Any (y => y.IsCollection || y.IsDictionary)))
 			{
 				writer.WriteLine ("using System;");
 				writer.WriteLine ("using System.Collections.Generic;");
@@ -182,7 +182,9 @@ namespace VinylCutter
 		{
 			if (item.IsCollection)
 				return $"ImmutableArray.CreateRange ({item.Name.SmartLowerCase ()} ?? Array.Empty<{MakeFriendlyTypeName (item.TypeName)}> ())";
-			return item.Name.SmartLowerCase ();
+            if (item.IsDictionary)
+                return $"{item.Name.SmartLowerCase ()}.ToImmutableDictionary ()";
+            return item.Name.SmartLowerCase ();
 		}
 
 		static void GenerateWith (RecordInfo record, CodeWriter writer)
@@ -254,7 +256,14 @@ namespace VinylCutter
 				string arrayType = isArg ? "IEnumerable" : "ImmutableArray";
 				return $"{arrayType}<{MakeFriendlyTypeName (item.TypeName)}>";
 			}
-			return MakeFriendlyTypeName (item.TypeName);
+            else if (item.IsDictionary)
+            {
+                string dictType = isArg ? "Dictionary" : "ImmutableDictionary";
+                string par = string.Join (", ", item.TypeName.Split (',').Select (x => MakeFriendlyTypeName (x)));
+                return $"{dictType}<{par}>";
+            }
+
+            return MakeFriendlyTypeName (item.TypeName);
 		}
 
 		static string MakeFriendlyTypeName (string typeName)

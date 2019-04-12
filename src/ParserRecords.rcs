@@ -16,6 +16,9 @@ namespace VinylCutter
 
 		[Default ("false")]
 		public bool IsCollection;
+
+		[Default ("false")]
+		public bool IsDictionary;
 		
 		[Default ("false")]
 		public bool IncludeWith;

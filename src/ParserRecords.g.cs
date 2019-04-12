@@ -23,15 +23,17 @@ namespace VinylCutter
 		public string Name { get; }
 		public string TypeName { get; }
 		public bool IsCollection { get; }
+		public bool IsDictionary { get; }
 		public bool IncludeWith { get; }
 		public string DefaultValue { get; }
 		public bool IsMutable { get; }
 
-		public ItemInfo (string name, string typeName, bool isCollection = false, bool includeWith = false, string defaultValue = null, bool isMutable = false)
+		public ItemInfo (string name, string typeName, bool isCollection = false, bool isDictionary = false, bool includeWith = false, string defaultValue = null, bool isMutable = false)
 		{
 			Name = name;
 			TypeName = typeName;
 			IsCollection = isCollection;
+			IsDictionary = isDictionary;
 			IncludeWith = includeWith;
 			DefaultValue = defaultValue;
 			IsMutable = isMutable;

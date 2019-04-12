@@ -69,7 +69,7 @@ public partial class SimpleClass2
 		[Fact]
 		public void Enumerables ()
 		{
-			ItemInfo item = new ItemInfo ("Foo", "Int32", true, false);  
+			ItemInfo item = new ItemInfo ("Foo", "Int32", true);  
 			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ()); 
 
 			string expected = @"using System;
@@ -93,8 +93,36 @@ public partial class SimpleClass
 ";
 			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
 		}
-		
-		[Fact]
+
+        [Fact]
+        public void Dictionary ()
+        {
+            ItemInfo item = new ItemInfo ("Foo", "string,Int32", false, true);
+            RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ());
+
+            string expected = @"using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+
+public partial class SimpleClass
+{
+	public ImmutableDictionary<string, int> Foo { get; }
+
+	public SimpleClass (Dictionary<string, int> foo)
+	{
+		Foo = foo.ToImmutableDictionary ();
+	}
+
+	public SimpleClass WithFoo (Dictionary<string, int> foo)
+	{
+		return new SimpleClass (foo);
+	}
+}
+";
+            Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
+        }
+
+        [Fact]
 		public void OtherRecordTypes ()
 		{
 			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public); 
@@ -164,7 +192,7 @@ public partial class Container
 		[Fact]
 		public void WithOnSingleProperty ()
 		{
-			ItemInfo item = new ItemInfo ("Foo", "Int32", false, true);  
+			ItemInfo item = new ItemInfo ("Foo", "Int32", false, false, true);  
 			ItemInfo item2 = new ItemInfo ("Bar", "Int32");
 			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false, new ItemInfo [] { item, item2 });
 

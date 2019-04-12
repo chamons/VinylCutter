@@ -50,6 +50,8 @@ namespace Integration
 
 		[Mutable]
 		List<CharacterResolver> ActiveResolvers;
+
+        Dictionary<int,int> Map;
 	}
 }
 ";
@@ -112,15 +114,22 @@ namespace Integration
 	{
 		public long Tick { get; }
 		List<CharacterResolver> ActiveResolvers;
+		public ImmutableDictionary<int, int> Map { get; }
 
-		public GameState (long tick)
+		public GameState (long tick, Dictionary<int, int> map)
 		{
 			Tick = tick;
+			Map = map.ToImmutableDictionary ();
 		}
 
 		public GameState WithTick (long tick)
 		{
-			return new GameState (tick) { ActiveResolvers = this.ActiveResolvers };
+			return new GameState (tick, Map) { ActiveResolvers = this.ActiveResolvers };
+		}
+
+		public GameState WithMap (Dictionary<int, int> map)
+		{
+			return new GameState (Tick, map) { ActiveResolvers = this.ActiveResolvers };
 		}
 	}
 }
