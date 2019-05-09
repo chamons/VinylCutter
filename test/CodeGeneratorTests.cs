@@ -98,7 +98,8 @@ public partial class SimpleClass
 		public void Dictionary ()
 		{
 			ItemInfo item = new ItemInfo ("Foo", "string,Int32", false, true);
-			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ());
+			ItemInfo item2 = new ItemInfo ("Bar", "Int32");
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, new ItemInfo[] { item, item2 });
 
 			string expected = @"using System;
 using System.Collections.Generic;
@@ -107,15 +108,22 @@ using System.Collections.Immutable;
 public partial class SimpleClass
 {
 	public ImmutableDictionary<string, int> Foo { get; }
+	public int Bar { get; }
 
-	public SimpleClass (Dictionary<string, int> foo)
+	public SimpleClass (IDictionary<string, int> foo, int bar)
 	{
 		Foo = foo.ToImmutableDictionary ();
+		Bar = bar;
 	}
 
-	public SimpleClass WithFoo (Dictionary<string, int> foo)
+	public SimpleClass WithFoo (IDictionary<string, int> foo)
 	{
-		return new SimpleClass (foo);
+		return new SimpleClass (foo, Bar);
+	}
+
+	public SimpleClass WithBar (int bar)
+	{
+		return new SimpleClass (Foo, bar);
 	}
 }
 ";

@@ -116,7 +116,7 @@ namespace Integration
 		List<CharacterResolver> ActiveResolvers;
 		public ImmutableDictionary<int, int> Map { get; }
 
-		public GameState (long tick, Dictionary<int, int> map)
+		public GameState (long tick, IDictionary<int, int> map)
 		{
 			Tick = tick;
 			Map = map.ToImmutableDictionary ();
@@ -127,7 +127,7 @@ namespace Integration
 			return new GameState (tick, Map) { ActiveResolvers = this.ActiveResolvers };
 		}
 
-		public GameState WithMap (Dictionary<int, int> map)
+		public GameState WithMap (IDictionary<int, int> map)
 		{
 			return new GameState (Tick, map) { ActiveResolvers = this.ActiveResolvers };
 		}

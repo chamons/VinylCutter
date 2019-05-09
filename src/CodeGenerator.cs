@@ -258,7 +258,7 @@ namespace VinylCutter
 			}
 			else if (item.IsDictionary)
 			{
-				string dictType = isArg ? "Dictionary" : "ImmutableDictionary";
+				string dictType = isArg ? "IDictionary" : "ImmutableDictionary";
 				string par = string.Join (", ", item.TypeName.Split (',').Select (x => MakeFriendlyTypeName (x)));
 				return $"{dictType}<{par}>";
 			}
