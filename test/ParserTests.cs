@@ -34,7 +34,7 @@ namespace VinylCutter.Tests
 			Assert.Single (file.Records[0].Items);
 			Assert.Equal ("X", file.Records[0].Items[0].Name);
 			Assert.Equal ("Int32", file.Records[0].Items[0].TypeName);
-			Assert.False (file.Records[0].Items[0].IsCollection);
+			Assert.Equal (CollectionType.None, file.Records[0].Items[0].CollectionType);
 			Assert.False (file.Records[0].Items[0].IncludeWith);
 			Assert.False (file.Records[0].Items[0].IsMutable);
 		}
@@ -47,7 +47,7 @@ namespace VinylCutter.Tests
 			Assert.Single (file.Records[0].Items);
 			Assert.Equal ("Y", file.Records[0].Items [0].Name);
 			Assert.Equal ("Double", file.Records[0].Items [0].TypeName);
-			Assert.False (file.Records[0].Items [0].IsCollection);
+			Assert.Equal (CollectionType.None, file.Records[0].Items[0].CollectionType);
 			Assert.False (file.Records[0].Items [0].IncludeWith);
 			Assert.False (file.Records[0].Items [0].IsMutable);
 
@@ -60,8 +60,19 @@ namespace VinylCutter.Tests
 
 			Assert.Single (file.Records[0].Items);
 			Assert.Equal ("Z", file.Records[0].Items [0].Name);
-			Assert.True(file.Records[0].Items [0].IsCollection);
+			Assert.Equal (CollectionType.List, file.Records[0].Items[0].CollectionType);
 			Assert.Equal ("int", file.Records[0].Items [0].TypeName);
+		}
+
+		[Fact]
+		public void HashSet ()
+		{
+			FileInfo file = Parse ("public class SimpleClass { HashSet<int> Z; }");
+
+			Assert.Single (file.Records[0].Items);
+			Assert.Equal ("Z", file.Records[0].Items [0].Name);
+			Assert.Equal (CollectionType.HashSet, file.Records[0].Items[0].CollectionType);
+			Assert.Equal ("int", file.Records[0].Items [0].TypeName);	
 		}
 
 		[Fact]
@@ -71,7 +82,7 @@ namespace VinylCutter.Tests
 
 			Assert.Single (file.Records[0].Items);
 			Assert.Equal ("Z", file.Records[0].Items [0].Name);
-			Assert.True(file.Records[0].Items [0].IsCollection);
+			Assert.Equal (CollectionType.List, file.Records[0].Items[0].CollectionType);
 			Assert.Equal ("List<int>", file.Records[0].Items [0].TypeName);
 		}
 
@@ -82,8 +93,7 @@ namespace VinylCutter.Tests
 
 			Assert.Single (file.Records[0].Items);
 			Assert.Equal ("Z", file.Records[0].Items[0].Name);
-			Assert.False (file.Records[0].Items[0].IsCollection);
-			Assert.True (file.Records[0].Items[0].IsDictionary);
+			Assert.Equal (CollectionType.Dictionary, file.Records[0].Items[0].CollectionType);
 			Assert.Equal ("int,string", file.Records[0].Items[0].TypeName);
 		}
 
@@ -99,7 +109,7 @@ public class Container { List <Element> E; }
 			var container = file.Records.First (x => x.Name == "Container");
 			Assert.Equal ("E", container.Items [0].Name);
 			Assert.Equal ("Element", container.Items [0].TypeName);
-			Assert.True (container.Items [0].IsCollection);
+			Assert.Equal (CollectionType.List, container.Items [0].CollectionType);
 		}
 
 		[Fact]
@@ -323,7 +333,7 @@ public class SimpleClass : Foo, IFoo
 			Assert.Equal ("Object", file.Records[0].Items[1].TypeName);
 			Assert.True (file.Records[0].Items[2].IsMutable);
 			Assert.Equal ("List<object>", file.Records[0].Items[2].TypeName);
-			Assert.False (file.Records[0].Items[2].IsCollection);
+			Assert.Equal (CollectionType.None, file.Records[0].Items[2].CollectionType);
 		}
 
 		[Fact]

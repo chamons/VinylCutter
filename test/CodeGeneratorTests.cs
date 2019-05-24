@@ -69,7 +69,7 @@ public partial class SimpleClass2
 		[Fact]
 		public void Enumerables ()
 		{
-			ItemInfo item = new ItemInfo ("Foo", "Int32", true);  
+			ItemInfo item = new ItemInfo ("Foo", "Int32", CollectionType.List);  
 			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ()); 
 
 			string expected = @"using System;
@@ -95,9 +95,37 @@ public partial class SimpleClass
 		}
 
 		[Fact]
+		public void HashSet ()
+		{
+			ItemInfo item = new ItemInfo ("Foo", "Int32", CollectionType.HashSet);  
+			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, item.Yield ()); 
+
+			string expected = @"using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+
+public partial class SimpleClass
+{
+	public ImmutableHashSet<int> Foo { get; }
+
+	public SimpleClass (IEnumerable<int> foo)
+	{
+		Foo = ImmutableHashSet.CreateRange (foo ?? Array.Empty<int> ());
+	}
+
+	public SimpleClass WithFoo (IEnumerable<int> foo)
+	{
+		return new SimpleClass (foo);
+	}
+}
+";
+			Assert.Equal (expected, Generate (record), ignoreLineEndingDifferences: true);
+		}
+
+		[Fact]
 		public void Dictionary ()
 		{
-			ItemInfo item = new ItemInfo ("Foo", "string,Int32", false, true);
+			ItemInfo item = new ItemInfo ("Foo", "string,Int32", CollectionType.Dictionary);
 			ItemInfo item2 = new ItemInfo ("Bar", "Int32");
 			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, new ItemInfo[] { item, item2 });
 
@@ -134,7 +162,7 @@ public partial class SimpleClass
 		public void OtherRecordTypes ()
 		{
 			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public); 
-			ItemInfo item = new ItemInfo ("Items", "SimpleClass", true, false);  
+			ItemInfo item = new ItemInfo ("Items", "SimpleClass", CollectionType.List);  
 			RecordInfo record2 = new RecordInfo ("Container", true, Visibility.Public, true, item.Yield ()); 
 
 			string expected = @"using System;
@@ -200,7 +228,7 @@ public partial class Container
 		[Fact]
 		public void WithOnSingleProperty ()
 		{
-			ItemInfo item = new ItemInfo ("Foo", "Int32", false, false, true);  
+			ItemInfo item = new ItemInfo ("Foo", "Int32", CollectionType.None, true);  
 			ItemInfo item2 = new ItemInfo ("Bar", "Int32");
 			RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, false, new ItemInfo [] { item, item2 });
 
@@ -361,7 +389,7 @@ public partial class Container
 		{
 			{
 				ItemInfo item = new ItemInfo ("ID", "Int32");
-				ItemInfo item2 = new ItemInfo ("UID", "Int32", true);
+				ItemInfo item2 = new ItemInfo ("UID", "Int32", CollectionType.List);
 
 				RecordInfo record = new RecordInfo ("SimpleClass", true, Visibility.Public, true, new ItemInfo [] { item, item2 });
 

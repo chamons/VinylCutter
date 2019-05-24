@@ -4,6 +4,8 @@ using System.Collections.Immutable;
 
 namespace VinylCutter
 {
+	public enum CollectionType { None, List, HashSet, Dictionary }
+
 	public enum Visibility { Public, Private }
 
 	public partial class ParseCompileError : Exception
@@ -22,18 +24,16 @@ namespace VinylCutter
 	{
 		public string Name { get; }
 		public string TypeName { get; }
-		public bool IsCollection { get; }
-		public bool IsDictionary { get; }
+		public CollectionType CollectionType { get; }
 		public bool IncludeWith { get; }
 		public string DefaultValue { get; }
 		public bool IsMutable { get; }
 
-		public ItemInfo (string name, string typeName, bool isCollection = false, bool isDictionary = false, bool includeWith = false, string defaultValue = null, bool isMutable = false)
+		public ItemInfo (string name, string typeName, CollectionType collectionType = CollectionType.None, bool includeWith = false, string defaultValue = null, bool isMutable = false)
 		{
 			Name = name;
 			TypeName = typeName;
-			IsCollection = isCollection;
-			IsDictionary = isDictionary;
+			CollectionType = collectionType;
 			IncludeWith = includeWith;
 			DefaultValue = defaultValue;
 			IsMutable = isMutable;

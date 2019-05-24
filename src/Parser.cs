@@ -76,7 +76,8 @@ public class Mutable : System.Attribute { }
 		{
 			var root = (CompilationUnitSyntax)tree.GetRoot ();
 			var mscorlib = MetadataReference.CreateFromFile (typeof (object).Assembly.Location);
-			var compilation = CSharpCompilation.Create ("Vinyl").AddReferences (mscorlib).AddSyntaxTrees (tree).WithOptions (new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
+			var systemCore = MetadataReference.CreateFromFile (typeof (HashSet<int>).Assembly.Location);
+			var compilation = CSharpCompilation.Create ("Vinyl").AddReferences (mscorlib).AddReferences (systemCore).AddSyntaxTrees (tree).WithOptions (new CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary));
 
 			var compilerDiagnostics = compilation.GetDiagnostics ();
 			var compilerErrors = compilerDiagnostics.Where (i => i.Severity == DiagnosticSeverity.Error);
@@ -189,23 +190,25 @@ public class Mutable : System.Attribute { }
 		{
 			string defaultValue = GetDefaultValue (symbol);
 			bool mutableValue = GetMutable (symbol);
-			if (type.OriginalDefinition.Equals (Symbols.List))
+			bool isList = type.OriginalDefinition.Equals (Symbols.List);
+			bool isHash = type.OriginalDefinition.Equals (Symbols.HashSet);
+			if (isList || isHash)
 			{
 				INamedTypeSymbol t = (INamedTypeSymbol)type;
 				if (mutableValue) // Mutable Items are not converted to immutable collections if they are lists
-					return new ItemInfo (symbol.Name, t.ToDisplayString (DisplayFormat), false, false, HasWith (symbol), defaultValue, true);
+					return new ItemInfo (symbol.Name, t.ToDisplayString (DisplayFormat), CollectionType.None, HasWith (symbol), defaultValue, true);
 				else
-					return new ItemInfo (symbol.Name, t.TypeArguments[0].ToDisplayString (DisplayFormat), true, false, HasWith (symbol), defaultValue);
+					return new ItemInfo (symbol.Name, t.TypeArguments[0].ToDisplayString (DisplayFormat), isList ? CollectionType.List : CollectionType.HashSet, HasWith (symbol), defaultValue);
 			}
 			else if (type.OriginalDefinition.Equals (Symbols.Dictionary))
 			{
 				INamedTypeSymbol t = (INamedTypeSymbol)type;
 				if (mutableValue) // Mutable Items are not converted to immutable collections if they are lists
-					return new ItemInfo (symbol.Name, t.ToDisplayString (DisplayFormat), false, false, HasWith (symbol), defaultValue, true);
+					return new ItemInfo (symbol.Name, t.ToDisplayString (DisplayFormat), CollectionType.None, HasWith (symbol), defaultValue, true);
 				else
-					return new ItemInfo (symbol.Name, string.Join (",", t.TypeArguments.Select (x => x.ToDisplayString(DisplayFormat))), false, true, HasWith (symbol), defaultValue);
+					return new ItemInfo (symbol.Name, string.Join (",", t.TypeArguments.Select (x => x.ToDisplayString(DisplayFormat))), CollectionType.Dictionary, HasWith (symbol), defaultValue);
 			}
-			return new ItemInfo (symbol.Name, type.Name, false, false, HasWith (symbol), defaultValue, mutableValue);
+			return new ItemInfo (symbol.Name, type.Name, CollectionType.None, HasWith (symbol), defaultValue, mutableValue);
 		}
 	
 		string GetDefaultValue (ISymbol symbol)
@@ -240,6 +243,7 @@ public class Mutable : System.Attribute { }
 		public INamedTypeSymbol MutableAttribute;
 		public INamedTypeSymbol List;
 		public INamedTypeSymbol Dictionary;
+		public INamedTypeSymbol HashSet;
 
 		public Symbols (CSharpCompilation compilation)
 		{
@@ -253,6 +257,7 @@ public class Mutable : System.Attribute { }
 			MutableAttribute = compilation.GetTypeByMetadataName ("Mutable");
 			List = compilation.GetTypeByMetadataName ("System.Collections.Generic.List`1");
 			Dictionary = compilation.GetTypeByMetadataName ("System.Collections.Generic.Dictionary`2");
+			HashSet = compilation.GetTypeByMetadataName ("System.Collections.Generic.HashSet`1");
         }
     }
 }

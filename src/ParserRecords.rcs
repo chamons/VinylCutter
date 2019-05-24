@@ -9,20 +9,20 @@ namespace VinylCutter
 		public override string ToString () => $"ParseCompileError -  {ErrorText}";
 	}
 
+	[Inject]
+	public enum CollectionType { None, List, Dictionary }
+
 	public class ItemInfo
 	{
 		public string Name;
 		public string TypeName;
 
-		[Default ("false")]
-		public bool IsCollection;
+		[Default ("CollectionType.None")]
+		public CollectionType CollectionType;
 
 		[Default ("false")]
-		public bool IsDictionary;
-		
-		[Default ("false")]
 		public bool IncludeWith;
-		
+
 		[Default ("null")]
 		public string DefaultValue;
 

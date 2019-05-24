@@ -65,7 +65,7 @@ namespace VinylCutter
 
 		void GenerateUsings (CodeWriter writer)
 		{
-			if (File.Records.Any (x => x.Items.Any (y => y.IsCollection || y.IsDictionary)))
+			if (File.Records.Any (x => x.Items.Any (y => y.CollectionType != CollectionType.None)))
 			{
 				writer.WriteLine ("using System;");
 				writer.WriteLine ("using System.Collections.Generic;");
@@ -180,11 +180,17 @@ namespace VinylCutter
 
 		static string GenerateFieldAssign (ItemInfo item)
 		{
-			if (item.IsCollection)
-				return $"ImmutableArray.CreateRange ({item.Name.SmartLowerCase ()} ?? Array.Empty<{MakeFriendlyTypeName (item.TypeName)}> ())";
-			if (item.IsDictionary)
-				return $"{item.Name.SmartLowerCase ()}.ToImmutableDictionary ()";
-			return item.Name.SmartLowerCase ();
+			switch (item.CollectionType)
+			{
+				case CollectionType.List:
+					return $"ImmutableArray.CreateRange ({item.Name.SmartLowerCase ()} ?? Array.Empty<{MakeFriendlyTypeName (item.TypeName)}> ())";
+				case CollectionType.HashSet:
+					return $"ImmutableHashSet.CreateRange ({item.Name.SmartLowerCase ()} ?? Array.Empty<{MakeFriendlyTypeName (item.TypeName)}> ())";
+				case CollectionType.Dictionary:
+					return $"{item.Name.SmartLowerCase ()}.ToImmutableDictionary ()";
+				default:
+					return item.Name.SmartLowerCase ();
+			}
 		}
 
 		static void GenerateWith (RecordInfo record, CodeWriter writer)
@@ -251,19 +257,25 @@ namespace VinylCutter
 
 		static string GetTypeName (ItemInfo item, bool isArg)
 		{
-			if (item.IsCollection) 
+			switch (item.CollectionType)
 			{
-				string arrayType = isArg ? "IEnumerable" : "ImmutableArray";
-				return $"{arrayType}<{MakeFriendlyTypeName (item.TypeName)}>";
+				case CollectionType.List:
+				{
+					string arrayType = isArg ? "IEnumerable" : "ImmutableArray";
+					return $"{arrayType}<{MakeFriendlyTypeName (item.TypeName)}>";
+				}
+				case CollectionType.HashSet:
+				{
+					string arrayType = isArg ? "IEnumerable" : "ImmutableHashSet";
+					return $"{arrayType}<{MakeFriendlyTypeName (item.TypeName)}>";
+				}
+				case CollectionType.Dictionary:
+					string dictType = isArg ? "IDictionary" : "ImmutableDictionary";
+					string par = string.Join (", ", item.TypeName.Split (',').Select (x => MakeFriendlyTypeName (x)));
+					return $"{dictType}<{par}>";
+				default:
+					return MakeFriendlyTypeName (item.TypeName);
 			}
-			else if (item.IsDictionary)
-			{
-				string dictType = isArg ? "IDictionary" : "ImmutableDictionary";
-				string par = string.Join (", ", item.TypeName.Split (',').Select (x => MakeFriendlyTypeName (x)));
-				return $"{dictType}<{par}>";
-			}
-
-			return MakeFriendlyTypeName (item.TypeName);
 		}
 
 		static string MakeFriendlyTypeName (string typeName)

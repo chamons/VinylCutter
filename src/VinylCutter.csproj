@@ -8,7 +8,7 @@
     <ToolCommandName>dotnet-records</ToolCommandName>
     <Title>VinylCutter - A Record Generator</Title>
     <Description>Generates immutable record classes from C# definitions.</Description>
-    <PackageVersion>0.2</PackageVersion>
+    <PackageVersion>0.2.2</PackageVersion>
     <Authors>Chris Hamons</Authors>
     <Company>Microsoft</Company>
     <Copyright>MIT</Copyright>
