@@ -1,10 +1,16 @@
 # VinylCutter
 
-**A "Record Class" Code Generator for C#**
+**An obsolete "Record Class" Code Generator for C#**
+
+
+## Overview
+
+[C# 9 now has Record Classes](https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-9#record-types) use that instead of this project.
+
+## Historical 
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/b/b1/Vinyl_record_LP_10inch.JPG" alt="drawing" width="450px"/>
 
-## Overview
 
 C# lacks a true "record class", unlike F# or Ruby, which makes simple data class declarations like:
 
